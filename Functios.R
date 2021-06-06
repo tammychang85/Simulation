@@ -1,9 +1,11 @@
 ### ---- packages ----
 ## neural gas tree
 library(scenario)
-#import::here(buildtree, .from = "BuildScenarioTree.R") # disable plotting of scenario tree by default
+#import::here(buildtree, .from = "BuildScenarioTree.R")
+
 
 ### ---- functions ----
+
 ## demand datas
 # simulate static covariates of products 
 getStaticCovariates = function(){
@@ -174,10 +176,10 @@ binDemands = function(demands, binNum, realizationSize, probs=c(0.05, 0.95), tes
   return(list(values=binnedDemands, probs=demandProbs))
 }
 
-getResidualTree = function(realizations, staticCovariates, binNum, realizationSize, probs=c(0.05, 0.95), test=FALSE, w=FALSE) {
+getResidualTree = function(realizations, staticCovariates, binNum, probs=c(0.05, 0.95), test=FALSE, w=FALSE) {
   
   estimatedDemands = getEstimatedDemands(staticCovariates, realizations)
-  binnedDemands = binDemands(estimatedDemands, binNum, realizationSize, probs=probs, test=test, w=w)
+  binnedDemands = binDemands(estimatedDemands, binNum, dim(realizations$frame)[1], probs=probs, test=test, w=w)
   demands = binnedDemands$values
   probabilities = binnedDemands$probs
   
@@ -188,47 +190,47 @@ getResidualTree = function(realizations, staticCovariates, binNum, realizationSi
     if (i == 1){
       for (j in seq_along(demands[[i]])) {
         curret.demand = demands[[i]][j]
-        next.demand = demands[[i + 1]]
-        path.i = data.frame(curret.demand, next.demand, row.names=NULL)
-        demandPaths = rbind(demandPaths, path.i)
+        nextDemand = demands[[i + 1]]
+        pathI = data.frame(curret.demand, nextDemand, row.names=NULL)
+        demandPaths = rbind(demandPaths, pathI)
         
-        curret.prob = probabilities[[i]][j]
-        next.prob = probabilities[[i + 1]]
-        prob.i = data.frame(curret.prob, next.prob, row.names=NULL)
-        demandProbs = rbind(demandProbs, prob.i)
+        curretProb = probabilities[[i]][j]
+        nextProb = probabilities[[i + 1]]
+        probI = data.frame(curretProb, nextProb, row.names=NULL)
+        demandProbs = rbind(demandProbs, probI)
       }
       demandPaths = apply(demandPaths, 1, toString)
       demandProbs = apply(demandProbs, 1, toString)
     }
     else {
-      current.paths = data.frame()
-      current.probs = data.frame()
+      currentPaths = data.frame()
+      currentProbs = data.frame()
       for (j in seq_along(demandPaths)) {
-        curret.period = rep(demandPaths[j], binNum)
-        next.period = demands[[i + 1]]
-        path.i = data.frame(curret.period, next.period, row.names=NULL)
-        current.paths = rbind(current.paths, path.i)
+        curretPeriod = rep(demandPaths[j], binNum)
+        nextPeriod = demands[[i + 1]]
+        pathI = data.frame(curretPeriod, nextPeriod, row.names=NULL)
+        currentPaths = rbind(currentPaths, pathI)
         
-        curret.prob = rep(demandProbs[j], binNum)
-        next.prob = probabilities[[i + 1]]
-        prob.i = data.frame(curret.prob, next.prob, row.names=NULL)
-        current.probs = rbind(current.probs, prob.i) 
+        curretProb = rep(demandProbs[j], binNum)
+        nextProb = probabilities[[i + 1]]
+        probI = data.frame(curretProb, nextProb, row.names=NULL)
+        currentProbs = rbind(currentProbs, probI) 
       }
-      demandPaths = apply(current.paths, 1, toString)
-      demandProbs = apply(current.probs, 1, toString)
+      demandPaths = apply(currentPaths, 1, toString)
+      demandProbs = apply(currentProbs, 1, toString)
     }
   }
   
   # convert the paths from string to float
-  tree_values = list()
-  branch_probabilities = c()
+  treeValues = list()
+  branchProbabilities = c()
   for (i in seq_along(demandPaths)) {
-    tree_values = append(tree_values, list(c(0, as.double(strsplit(demandPaths[i], ',')[[1]]))))
-    branch_probabilities = c(branch_probabilities, prod(as.double(strsplit(demandProbs[i], ',')[[1]])))
+    treeValues = append(treeValues, list(c(0, as.double(strsplit(demandPaths[i], ',')[[1]]))))
+    branchProbabilities = c(branchProbabilities, prod(as.double(strsplit(demandProbs[i], ',')[[1]])))
   }
-  tree_values = do.call(cbind, tree_values)
+  treeValues = do.call(cbind, treeValues)
   
-  return(list(tree_values=tree_values, branch_probabilities=branch_probabilities))
+  return(list(tree_values=treeValues, branch_probabilities=branchProbabilities))
 }
 
 ### ---- test ----
@@ -240,4 +242,6 @@ standardTreeStructure = c(1, 2, 4, 8, 16)
 neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
 
 binNum = 2
-residudalTree = getResidualTree(realizations, staticCovariates, binNum, realizationSize)
+productStaticCovariates = getStaticCovariates()
+residudalTree = getResidualTree(realizations, productStaticCovariates, binNum)
+residudalTree2 = getResidualTree(realizations, productStaticCovariates, 3)
