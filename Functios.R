@@ -3,6 +3,9 @@
 library(scenario)
 #import::here(buildtree, .from = "BuildScenarioTree.R")
 
+## solver
+library(Rglpk)
+
 
 ### ---- functions ----
 
@@ -49,10 +52,10 @@ getDemandPath = function(staticCovariates){
     if(d4 >= 0){break}
   }
   
-  return(list(d1=d1, d2=d2, d3=d3, d4=d4, x1=x1, x2=x2, x3=x3, x4=x4))
+  return(data.frame(d1, d2, d3, d4, x1, x2, x3, x4))
 }
 
-# get demand realizations
+# simulate demand realizations
 getRealizations = function(realizationSize){
   
   realizationDataFrame = data.frame()
@@ -69,15 +72,15 @@ getRealizations = function(realizationSize){
 
 ## neural gas tree
 # receive a vector of nodal structure and return a matrix of tree structure
-getTreeStructureMatrix = function(noedPerPeriod){
+getTreeStructureMatrix = function(nodePerPeriod){
   
-  periodLength = length(noedPerPeriod)
-  scenarioNum = noedPerPeriod[periodLength]
+  periodLength = length(nodePerPeriod)
+  scenarioNum = nodePerPeriod[periodLength]
   
   # build the tree structure matrix
   treeStructure = c()
   nodeIndex = 1
-  for(nodeNumEachPeriod in noedPerPeriod){
+  for(nodeNumEachPeriod in nodePerPeriod){
     for(eachNode in 1:nodeNumEachPeriod){
       treeStructure = c(treeStructure, rep(nodeIndex, scenarioNum / nodeNumEachPeriod))
       nodeIndex = nodeIndex + 1
@@ -87,9 +90,9 @@ getTreeStructureMatrix = function(noedPerPeriod){
   return(matrix(treeStructure, nrow=periodLength, byrow=TRUE))
 }
 
-getNeuralGasTree = function(noedPerPeriod, realizations, maxIteration=40000, plot = FALSE){
+getNeuralGasTree = function(nodePerPeriod, realizations, maxIteration=40000, plot = FALSE){
   
-  treeStructure = getTreeStructureMatrix(noedPerPeriod)
+  treeStructure = getTreeStructureMatrix(nodePerPeriod)
   
   return(buildtree(realizations$matrix, treeStructure, jMax=maxIteration, plot=plot))
 }
@@ -233,15 +236,257 @@ getResidualTree = function(realizations, staticCovariates, binNum, probs=c(0.05,
   return(list(tree_values=treeValues, branch_probabilities=branchProbabilities))
 }
 
+
+## linear programming
+getCostStructure = function(fixedCost=1, holdingCost=0.25, flexibleK=1.5, penaltyK=1.5){
+  
+  flexibleCost = fixedCost * flexibleK
+  penaltyCost = flexibleCost * penaltyK
+  
+  return(c(fixedCost=fixedCost, flexibleCost=flexibleCost, holdingCost=holdingCost, penaltyCost=penaltyCost))
+}
+
+# return a variables vector of the objective function
+getVariableNames = function(nodePerPeriod) {
+  
+  variableNames = c()
+  fixedSupplierVars = c() # variable names of the fixed supplier
+  flexibleSupplierVars = c()  # variable names of the fixed supplier
+  inventoryVars = c() # variable names of the inventory
+  lostVars = c() # variable names of the lost
+  
+  for(i in 1:(length(nodePerPeriod) - 1)){
+    for(j in 1:(nodePerPeriod[length(nodePerPeriod)])){
+      time = as.character(i)
+      scenario = as.character(j)
+      #
+      fixedSupplierVars = c(fixedSupplierVars, paste0('fi', time, scenario))
+      flexibleSupplierVars = c(flexibleSupplierVars, paste0('fl', time, scenario))
+      inventoryVars = c(inventoryVars, paste0('I', time, scenario))
+      lostVars = c(lostVars, paste0('L', time, scenario))
+    }
+  }
+  variableNames = c(variableNames, fixedSupplierVars, flexibleSupplierVars, inventoryVars, lostVars)
+  
+  return(variableNames)
+}
+
+# check to show objective function with variables' names or not
+getObjctiveFunction = function(probability, nodePerPeriod, costStructure, check=FALSE) {
+  
+  obj = c() # the objective function
+  fixedSupplier = c() # weights of the fixed supplier
+  flexibleSupplier = c() # weights of the flexible supplier
+  inventory = c() # weights of the inventory
+  lost = c() # weights of the lost
+  
+  for (i in 1:(length(nodePerPeriod) - 1)) {
+    fixedSupplier = c(fixedSupplier, costStructure[1] * probability)
+    flexibleSupplier = c(flexibleSupplier, costStructure[2] * probability)
+    inventory = c(inventory, costStructure[3] * probability)
+    lost = c(lost, costStructure[4] * probability)
+  }
+  
+  obj = c(fixedSupplier, flexibleSupplier, inventory, lost)
+  
+  # to show variables's names of the objective function
+  if (check){
+    objWithVariableNames = matrix(obj, nrow=1)
+    colnames(objWithVariableNames) = getVariableNames(nodePerPeriod)
+    print(objWithVariableNames)
+  }
+
+  return(obj)
+}
+
+# use algo to choose between neural gas & residual tree, neural gas tree by default (set algo to TRUE)
+# check to show objective function with variables' names or not
+getConstraintsMatrix = function(objectiveFunction, nodePerPeriod, algo=TRUE, check=FALSE) {
+  
+  scenarioNum = nodePerPeriod[length(nodePerPeriod)]
+  periodNum = length(nodePerPeriod) - 1
+  VariableNum = length(objectiveFunction) # total numbers of variables of the objective function
+  constraints = c()
+  variableNames = NULL
+  constraintIndex = NULL
+  if (check){
+    variableNames = getVariableNames(nodePerPeriod)
+    constraintIndex = c()
+  }
+  
+  # constraints of suppliers if total sceanrio num is more than one
+  if(scenarioNum > 1){
+    # constraints of fixed supplier of each period
+    for (eachPeriod in 1:periodNum) {
+      for (eachScenario in 1:(scenarioNum - 1)) {
+        eachConstraint = rep(0, VariableNum)
+        eachConstraint[(eachPeriod - 1) * scenarioNum + 1] = 1
+        eachConstraint[(eachPeriod - 1) * scenarioNum + 1 + eachScenario] = -1
+        constraints = c(constraints, eachConstraint)
+        if (check){
+          period = as.character(eachPeriod)
+          scenario = as.character(eachScenario)
+          constraintIndex = c(constraintIndex, paste0('fixed', period, '-', scenario)) 
+        }
+      }
+    }
+    
+    # constraints of flexible supplier of period 1
+    for (eachScenario in 1:(scenarioNum - 1)) {
+      eachConstraint = rep(0, VariableNum)
+      eachConstraint[periodNum * scenarioNum + 1] = 1
+      eachConstraint[(periodNum * scenarioNum + 1 + eachScenario)] = -1
+      constraints = c(constraints, eachConstraint)
+      if (check){
+        scenario = as.character(eachScenario)
+        constraintIndex = c(constraintIndex, paste0('flexible1', '-', scenario)) 
+      }
+    }
+    
+    # constraints of flexible supplier after period 1
+    if (periodNum > 1){
+      # should have nodePerPeriod[eachPeriod] * ((scenarioNum/nodePerPeriod[eachPeriod]) - 1) constraints
+      for (eachPeriod in 1:(periodNum - 1)){
+        constraintCount = 1
+        nodeSceanrioNum = scenarioNum / nodePerPeriod[eachPeriod + 1] # how many scenarios belong to a unique node of each period
+        for(eachUniqueNode in 1:nodePerPeriod[eachPeriod + 1]){
+          for(eachScenario in 1:(nodeSceanrioNum-1)){
+            eachConstraint = rep(0, VariableNum)
+            eachConstraint[scenarioNum * (periodNum + eachPeriod) + nodeSceanrioNum * (eachUniqueNode - 1) + 1] = 1
+            eachConstraint[scenarioNum * (periodNum + eachPeriod) + nodeSceanrioNum * (eachUniqueNode - 1) + 1 + eachScenario] = -1
+            constraints = c(constraints, eachConstraint)
+            if (check){
+              period = as.character(eachPeriod + 1)
+              constraintIndex = c(constraintIndex, paste0('flexible', period, '-', as.character(constraintCount))) 
+              constraintCount = constraintCount + 1
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  # constraints of inventory and lost, should have scenarioNum *  periodNum constraints in total
+  supplierVariableNum = scenarioNum * periodNum * 2
+  for (eachPeriod in 1:(periodNum)){
+    for (eachScenario in 1:(scenarioNum)){
+      # constraints for inventory & lost of first period
+      eachConstraint = rep(0, VariableNum)
+      eachConstraint[(eachPeriod - 1) * scenarioNum + eachScenario] = 1 # fiexd supplier
+      eachConstraint[(eachPeriod - 1) * scenarioNum + periodNum * scenarioNum + eachScenario] = 1 # flexible supplier
+      if (eachPeriod != 1){
+        eachConstraint[supplierVariableNum + (eachPeriod - 2) * scenarioNum + eachScenario] = 1 # inventory of last period 
+      }
+      eachConstraint[supplierVariableNum + (eachPeriod - 1) * scenarioNum + eachScenario] = -1 # inventory of the current period
+      eachConstraint[supplierVariableNum + periodNum * scenarioNum + (eachPeriod - 1) * scenarioNum + eachScenario] = 1 # lost of the current period
+      constraints = c(constraints, eachConstraint)
+      if (check){
+        period = as.character(eachPeriod)
+        scenario = as.character(eachScenario)
+        constraintIndex = c(constraintIndex, paste0('demand', period, '-', scenario)) 
+      }
+    }
+  }
+  
+  constraintMatrix = matrix(constraints, ncol=VariableNum, byrow=TRUE)
+  
+  #
+  if (check){
+    checkConstraints = constraintMatrix
+    colnames(checkConstraints) = variableNames
+    rownames(checkConstraints) = constraintIndex
+    View(checkConstraints)
+  }
+  
+  return(constraintMatrix)
+}
+
+# return the right hand side of the constraints
+getRHS = function(constraintMatrix, nodePerPeriod, scnearioTree) {
+  
+  scenarioNum = nodePerPeriod[length(nodePerPeriod)]
+  periodNum = length(nodePerPeriod) - 1
+  rhs = rep(0, (dim(constraintMatrix)[1]) - (scenarioNum * periodNum)) # the right hand side of constraints for suppliers
+  for(eachPeriod in 1:periodNum){
+    rhs = c(rhs, scnearioTree$tree_values[(eachPeriod + 1), ])
+  }
+  
+  return(rhs)
+}
+
+optimize = function(scnearioTree, nodePerPeriod, costStructure, algo=TRUE){
+  
+  objectiveFunction = getObjctiveFunction(scnearioTree$branch_probabilities, nodePerPeriod, costStructure)
+  constraintMatrix = getConstraintsMatrix(objectiveFunction, nodePerPeriod, algo)
+  constraintDirections = rep('==' ,dim(constraintMatrix)[1])
+  rhs = getRHS(constraintMatrix, nodePerPeriod, scnearioTree)
+  
+  # optimize and return
+  return(Rglpk_solve_LP(objectiveFunction, constraintMatrix, constraintDirections, rhs, max=FALSE))
+}
+
+
+## parse optimizaton results
+# parse the solution from optimization results and return the order policy matrix
+getOrderPolicy = function(nodePerPeriod, optimizationResults) {
+  
+  scenarioNum = nodePerPeriod[length(nodePerPeriod)]
+  periodNum = length(nodePerPeriod) - 1
+  orderPolicy = optimizationResults$solution[1:(scenarioNum * periodNum * 2)] # extract the order policy from the solution
+  
+  # extract fixed order policy
+  fixedOrderPolicy = orderPolicy[1:(periodNum * scenarioNum)]
+  uniqueFixedOrderPolicy = rep(NA, periodNum)
+  index = 1
+  for (eachPeriod in 1:periodNum){
+    # record policy and remove duplicated ones
+    uniqueFixedOrderPolicy[eachPeriod] = unique(fixedOrderPolicy[index:(eachPeriod * scenarioNum)])
+    index = eachPeriod * scenarioNum + 1
+  }
+  
+  # make a matrix of flexible policy
+  flexiblePolicy = orderPolicy[(periodNum * scenarioNum + 1):length(orderPolicy)]
+  flexiblePolicyMatrix = matrix(0, nrow=periodNum, ncol=scenarioNum)
+  policyPerPeriod = list()
+  index = 1
+  for (eachPeriod in 1:periodNum){
+    policyPerPeriod[[eachPeriod]] = flexiblePolicy[index:(eachPeriod * scenarioNum)]
+    for(eachScenario in 1:scenarioNum){
+      flexiblePolicyMatrix[eachPeriod, eachScenario] = policyPerPeriod[[eachPeriod]][eachScenario]
+    }
+    index = eachPeriod * scenarioNum + 1
+  }
+  
+  # combine fixed and flexible policies
+  fianlOrderPolicy = cbind(flexiblePolicyMatrix, uniqueFixedOrderPolicy)
+  
+  return(fianlOrderPolicy)
+}
+
 ### ---- test ----
 
 realizationSize = 30
 realizations = getRealizations(realizationSize)
 
+simpleRealiztions = realizations
+simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, ] 
+
+# building tree test
 standardTreeStructure = c(1, 2, 4, 8, 16)
+simpleTreeStructure = c(1, 2, 4)
+
 neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
+simpleNeuralTree = getNeuralGasTree(simpleTreeStructure, simpleRealiztions)
 
 binNum = 2
 productStaticCovariates = getStaticCovariates()
 residudalTree = getResidualTree(realizations, productStaticCovariates, binNum)
-residudalTree2 = getResidualTree(realizations, productStaticCovariates, 3)
+
+# LP test
+costStructure = getCostStructure()
+obj = getObjctiveFunction(simpleNeuralTree$branch_probabilities, simpleTreeStructure, costStructure, TRUE)
+constraints = getConstraintsMatrix(obj, simpleTreeStructure, check = TRUE)
+results = optimize(simpleNeuralTree, simpleTreeStructure, costStructure)
+
+# policy
+orderPolicy = getOrderPolicy(simpleTreeStructure, results)
