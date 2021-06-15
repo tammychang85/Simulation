@@ -312,9 +312,8 @@ getObjctiveFunction = function(probability, nodePerPeriod, costStructure, check=
   return(obj)
 }
 
-# use algo to choose between neural gas & residual tree, neural gas tree by default (set algo to TRUE)
 # check to show objective function with variables' names or not
-getConstraintsMatrix = function(objectiveFunction, nodePerPeriod, algo=TRUE, check=FALSE) {
+getConstraintsMatrix = function(objectiveFunction, nodePerPeriod, check=FALSE) {
   
   scenarioNum = nodePerPeriod[length(nodePerPeriod)]
   periodNum = length(nodePerPeriod) - 1
@@ -427,10 +426,10 @@ getRHS = function(constraintMatrix, nodePerPeriod, scnearioTree) {
   return(rhs)
 }
 
-optimize = function(scnearioTree, nodePerPeriod, costStructure, algo=TRUE){
+optimize = function(scnearioTree, nodePerPeriod, costStructure){
   
   objectiveFunction = getObjctiveFunction(scnearioTree$branch_probabilities, nodePerPeriod, costStructure)
-  constraintMatrix = getConstraintsMatrix(objectiveFunction, nodePerPeriod, algo)
+  constraintMatrix = getConstraintsMatrix(objectiveFunction, nodePerPeriod)
   constraintDirections = rep('==' ,dim(constraintMatrix)[1])
   rhs = getRHS(constraintMatrix, nodePerPeriod, scnearioTree)
   
@@ -517,6 +516,74 @@ decideFlexiblePolicy = function(scenarioTree, observedDemands, orderPolicy) {
   return(chosenFlexiblePolicy)
 }
 
+
+## calculate costs
+# calculate all periods of cost of the given demand path order policy
+getCost = function(scenarioTree, observedDemands, costStructure, orderPolicy) {
+  
+  fixedOrderPolicy = orderPolicy[, dim(orderPolicy)[2]]
+  flexibleOrderPolicy = decideFlexiblePolicy(scenarioTree, observedDemands, orderPolicy)
+  costs = c()
+  
+  inventory = 0
+  for (eachPeriod in 1:(length(observedDemands) - 1)) {
+    quantity = inventory + fixedOrderPolicy[eachPeriod] + flexibleOrderPolicy[eachPeriod] # available items of each period
+    difference = quantity - observedDemands[[eachPeriod + 1]] # inventory or unmet demands
+    eachCost = 0 # cost of the current period
+    
+    # if have unmet demands
+    if (difference < 0){
+      eachCost = fixedOrderPolicy[eachPeriod] * costStructure[[1]] + flexibleOrderPolicy[eachPeriod] * costStructure[[2]] +  abs(difference) * costStructure[[4]]
+      inventory = 0
+    }
+    # if have invetory
+    else{
+      eachCost = fixedOrderPolicy[eachPeriod] * costStructure[[1]] + flexibleOrderPolicy[eachPeriod] * costStructure[[2]] + difference * costStructure[[3]]
+      inventory = difference
+    }
+
+    costs = c(costs, eachCost)
+  }
+  
+  
+  return(list(costs=costs, flexibleOrderPolicy=fixedOrderPolicy, fixedOrderPolicy=fixedOrderPolicy))
+}
+
+# calculate the average cost of a given data set
+getAverageCost = function(scenarioTree, testingDataSet, costStructure, orderPolicy) {
+ 
+  costs = rep(0, 4) # costs of four period
+  flexibleOrders = rep(0, 4) # orders of flexible supplier of four preriod
+  fixedOrders = rep(0, 4) # orders of fixed supplier of of four preriod
+  
+  # get the total cost for all testing data
+  for ( eachDemandPath in 1: (dim(testingDataSet)[2])){
+    eachResults = getCost(scenarioTree, testingDataSet[, eachDemandPath], costStructure, orderPolicy)
+    costs = costs + eachResults[[1]]
+    flexibleOrders = flexibleOrders + eachResults[[2]]
+    fixedOrders = fixedOrders + eachResults[[3]]
+  }
+  costs = costs / dim(testingDataSet)[2]
+  flexibleOrders = flexibleOrders / dim(testingDataSet)[2]
+  fixedOrders = fixedOrders / dim(testingDataSet)[2]
+  
+  return(list(cost=costs, flexibleOrders=flexibleOrders, fixedOrders=fixedOrders))
+}
+
+
+## coordinate functions above to do a round of simulation
+simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) {
+  
+  # get optimal solutions
+  solutions = optimize(scenarioTree, nodePerPeriod, costStructure)
+  # parse order policy
+  orderPolicy = getOrderPolicy(nodePerPeriod, solutions)
+  # results on testing datas
+  results = getAverageCost(scenarioTree, testingDataSet, costStructure, orderPolicy)
+  
+  return(results)
+}
+
 ### ---- test ----
 
 realizationSize = 30
@@ -540,11 +607,17 @@ residudalTree = getResidualTree(realizations, productStaticCovariates, binNum)
 
 # LP test
 costStructure = getCostStructure()
-obj = getObjctiveFunction(neuralTree$branch_probabilities, standardTreeStructure, costStructure)
+obj = getObjctiveFunction(residudalTree$branch_probabilities, standardTreeStructure, costStructure)
 constraints = getConstraintsMatrix(obj, standardTreeStructure)
-results = optimize(neuralTree, standardTreeStructure, costStructure)
+results = optimize(residudalTree, standardTreeStructure, costStructure)
 
 # policy
 orderPolicy = getOrderPolicy(standardTreeStructure, results)
-flexiblePolicy = decideFlexiblePolicy(neuralTree, testSet[, 1], orderPolicy)
+flexibleOrderPolicy = decideFlexiblePolicy(residudalTree, testSet[, 1], orderPolicy)
 
+# cost
+cost = getCost(residudalTree, testSet[, 1], costStructure, orderPolicy)
+avgCost = getAverageCost(residudalTree, testSet, costStructure, orderPolicy)
+
+results = simulate(neuralTree, testSet, standardTreeStructure, costStructure)
+results$cost
