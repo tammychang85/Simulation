@@ -5,7 +5,7 @@ realizations = getRealizations(realizationSize)
 
 standardTreeStructure = c(1, 2, 4, 8, 16)
 binNum = 2
-round = 2
+round = 30
 
 flexibleK = c(1.5, 3, 6) # parameters of the flexible cost
 highCostStructure = rep(list(0), length(flexibleK)) # cost structure under high peanlty with different flexibleK
