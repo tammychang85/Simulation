@@ -69,6 +69,19 @@ getRealizations = function(realizationSize){
   return(list(frame=realizationDataFrame, matrix=realizationMatrix))
 }
 
+getTestSet = function(staticCovariates, testSize){
+  
+  testDataFrame = data.frame()
+  for (i in 1:testSize){
+    eachTest = getDemandPath(staticCovariates)[1:4]
+    testDataFrame = rbind(testDataFrame, eachTest)
+  }
+  testSetMatrix = rbind(rep(0, testSize))
+  testSetMatrix = rbind(testSetMatrix, data.matrix(t(testDataFrame)))
+  
+  return(testSetMatrix)
+}
+
 
 ## neural gas tree
 # receive a vector of nodal structure and return a matrix of tree structure
@@ -463,10 +476,52 @@ getOrderPolicy = function(nodePerPeriod, optimizationResults) {
   return(fianlOrderPolicy)
 }
 
+# decide which flexible options to apply in each perid for a given scenario and return the policy matrix
+decideFlexiblePolicy = function(scenarioTree, observedDemands, orderPolicy) {
+  
+  estimatedDemands = scenarioTree$tree_values[-length(observedDemands), , drop=F] # exclude demands of the last period
+  candidateFlexiblePolicy = orderPolicy[, -dim(orderPolicy)[2], drop=F] #  exclude policies of the fixed supplier
+  chosenFlexiblePolicy = NULL
+  # decide orders for each period of the observed demand path
+  for (eachPeriod in 1:(length(observedDemands) - 1)) {
+    eachEstimatedDemands = estimatedDemands[eachPeriod, ]
+    
+    # the distance between the observed demnad data and estimated demands of each period
+    distanceMatrix = as.matrix(dist(matrix(c(observedDemands[eachPeriod], eachEstimatedDemands))))[, 1] 
+    distanceMatrix = distanceMatrix[2:length(distanceMatrix)] # exclude the distance of the observed demand with itself
+    
+    # find the closest estimated demand to the observed demand
+    smallestDistance = min(distanceMatrix)
+    smallestDistanceIndex = which(distanceMatrix==smallestDistance)[1]
+    closestEstimatedDemand = eachEstimatedDemands[smallestDistanceIndex]
+    
+    # filter the demand paths and policy
+    estimatedDemandsIndex = estimatedDemands[eachPeriod, ] %in% closestEstimatedDemand
+    estimatedDemands =  estimatedDemands[, estimatedDemandsIndex, drop=F] # filter the demand path
+    candidateFlexiblePolicy = candidateFlexiblePolicy[, estimatedDemandsIndex, drop=F] # filter the policy
+    if(dim(estimatedDemands)[2] == 1){
+      break # stop filtering directly if only one demand path remains
+    }
+    
+  }
+  
+  # remove the duplicated one
+  if(dim(candidateFlexiblePolicy)[2] > 1){
+    chosenFlexiblePolicy = candidateFlexiblePolicy[, 1]
+  }
+  
+  if(!is.null(dim(candidateFlexiblePolicy))){
+    chosenFlexiblePolicy = candidateFlexiblePolicy[, 1] # return in the form of a vector
+  }
+  
+  return(chosenFlexiblePolicy)
+}
+
 ### ---- test ----
 
 realizationSize = 30
 realizations = getRealizations(realizationSize)
+productStaticCovariates = getStaticCovariates()
 
 simpleRealiztions = realizations
 simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, ] 
@@ -474,19 +529,22 @@ simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, ]
 # building tree test
 standardTreeStructure = c(1, 2, 4, 8, 16)
 simpleTreeStructure = c(1, 2, 4)
+testSize = 50
+testSet = getTestSet(productStaticCovariates, testSize)
 
 neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
 simpleNeuralTree = getNeuralGasTree(simpleTreeStructure, simpleRealiztions)
 
 binNum = 2
-productStaticCovariates = getStaticCovariates()
 residudalTree = getResidualTree(realizations, productStaticCovariates, binNum)
 
 # LP test
 costStructure = getCostStructure()
-obj = getObjctiveFunction(simpleNeuralTree$branch_probabilities, simpleTreeStructure, costStructure, TRUE)
-constraints = getConstraintsMatrix(obj, simpleTreeStructure, check = TRUE)
-results = optimize(simpleNeuralTree, simpleTreeStructure, costStructure)
+obj = getObjctiveFunction(neuralTree$branch_probabilities, standardTreeStructure, costStructure)
+constraints = getConstraintsMatrix(obj, standardTreeStructure)
+results = optimize(neuralTree, standardTreeStructure, costStructure)
 
 # policy
-orderPolicy = getOrderPolicy(simpleTreeStructure, results)
+orderPolicy = getOrderPolicy(standardTreeStructure, results)
+flexiblePolicy = decideFlexiblePolicy(neuralTree, testSet[, 1], orderPolicy)
+
