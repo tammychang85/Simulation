@@ -2,7 +2,7 @@
 realizationSize = 50
 testSize = 200
 realizations = getRealizations(realizationSize)
-round = 1
+round = 30
 
 flexibleK = c(1.5, 3, 6) # parameters of the flexible cost
 highCostStructure = rep(list(0), length(flexibleK)) # cost structure under high peanlty with different flexibleK
@@ -120,23 +120,23 @@ for (i in seq_along(flexibleK)){
 }
 
 png('graphs/HighCostRatio.png')
-plot(1:length(flexible.costs), ratio.st.rt2.high, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.5, 1.2), main='high penalty')
-axis(1, at=1:length(flexible.costs), labels=flexible.costs)
-axis(2, at=seq(0.6, 1.2, 0.05))
-lines(1:length(flexible.costs), ratio.st.rt4.high, type='b', lty=2, lwd=2, col='orange')
-lines(1:length(flexible.costs), ratio.st.rt5.high, type='b', lty=2, lwd=2, col='red')
-legend('bottomright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
+plot(1:length(flexibleK), highRatio2, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.75, 1.2), main='high penalty')
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0.75, 1.2, 0.05))
+lines(1:length(flexibleK), highRatio4, type='b', lty=2, lwd=2, col='orange')
+lines(1:length(flexibleK), highRatio5, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
        col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
 dev.off()
 
 png('graphs/LowCostRatio.png')
-plot(1:length(flexible.costs), ratio.st.rt2.high, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.5, 1.2), main='low penalty')
-axis(1, at=1:length(flexible.costs), labels=flexible.costs)
-axis(2, at=seq(0.6, 1.2, 0.05))
-lines(1:length(flexible.costs), ratio.st.rt4.high, type='b', lty=2, lwd=2, col='orange')
-lines(1:length(flexible.costs), ratio.st.rt5.high, type='b', lty=2, lwd=2, col='red')
-legend('bottomright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
+plot(1:length(flexibleK), lowRatio2, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.95, 1.1), main='high penalty')
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0.95, 1.1, 0.025))
+lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
+lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
        col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
 dev.off()
