@@ -69,9 +69,9 @@ for (eachRound in 1:round){
     # calculate the cost
     eachLowNeuralCost = simulate(neuralTree, testSet, standardTreeStructure, lowCostStructure[[i]])$cost
     eachLowResidualCost2 = simulate(residualTree2, testSet, standardTreeStructure, lowCostStructure[[i]])$cost
-    eachLowResidualCost4 = simulate(residualTree4, testSet, standardTreeStructure, lowCostStructure[[i]])$cost
+    eachLowResidualCost4 = simulate(residualTree4, testSet, residualTreeStructure4, lowCostStructure[[i]])$cost
     print('residual tree bin 4 low solved')
-    eachLowResidualCost5 = simulate(residualTree5, testSet, standardTreeStructure, lowCostStructure[[i]])$cost
+    eachLowResidualCost5 = simulate(residualTree5, testSet, residualTreeStructure5, lowCostStructure[[i]])$cost
     print('residual tree bin 5 low solved')
     # record costs of each round 
     lowNeuralCosts[[i]] = c(lowNeuralCosts[[i]], sum(eachLowNeuralCost))
