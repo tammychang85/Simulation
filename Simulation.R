@@ -51,6 +51,7 @@ for (eachRound in 1:round){
   # simulate under different cost structures
   testSet = getTestSet(productStaticCovariates, testSize)
   for (i in seq_along(flexibleK)) {
+    print(paste0('flexibleK：', flexibleK[i]))
     ## high penalty
     # calculate the cost
     eachHighNeuralCost = simulate(neuralTree, testSet, standardTreeStructure, highCostStructure[[i]])$cost
