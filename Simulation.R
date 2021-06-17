@@ -50,6 +50,7 @@ for (eachRound in 1:round){
   
   # simulate under different cost structures
   testSet = getTestSet(productStaticCovariates, testSize)
+  saveRDS(testSet, paste0('testSets/testSet', eachRound, '.rds'))
   for (i in seq_along(flexibleK)) {
     print(paste0('flexibleK：', flexibleK[i]))
     ## high penalty
@@ -81,7 +82,6 @@ for (eachRound in 1:round){
     lowResidualCosts5[[i]] = c(lowResidualCosts5[[i]], sum(eachLowResidualCost5))
     
   }
-  print('---- done ----')
   
   # save the results every ten round
   if ((eachRound %% 10) == 0){
@@ -99,6 +99,7 @@ for (eachRound in 1:round){
     
     paste0('round ', eachRound, ' results saved')
   }
+  print('---- done ----')
   print('')
 }
 
@@ -111,13 +112,13 @@ lowRatio2 = c()
 lowRatio4 = c()
 lowRatio5 = c()
 for (i in seq_along(flexibleK)){
-  highRatio2 = c(highRatio2, mean(highNeuralCosts[[i]] / highResidualCosts2[[i]]))
-  highRatio4 = c(highRatio4, mean(highNeuralCosts[[i]] / highResidualCosts4[[i]])) 
-  highRatio5 = c(highRatio5, mean(highNeuralCosts[[i]] / highResidualCosts5[[i]]))
+  highRatio2 = c(highRatio2, mean(highNeuralCosts[[i]]) / mean(highResidualCosts2[[i]]))
+  highRatio4 = c(highRatio4, mean(highNeuralCosts[[i]]) / mean(highResidualCosts4[[i]]))
+  highRatio5 = c(highRatio5, mean(highNeuralCosts[[i]]) / mean(highResidualCosts5[[i]]))
   
-  lowRatio2 = c(lowRatio2, mean(lowNeuralCosts[[i]] / lowResidualCosts2[[i]]))
-  lowRatio4 = c(lowRatio4, mean(lowNeuralCosts[[i]] / lowResidualCosts4[[i]]))
-  lowRatio5 = c(lowRatio5, mean(lowNeuralCosts[[i]] / lowResidualCosts5[[i]]))
+  lowRatio2 = c(lowRatio2, mean(lowNeuralCosts[[i]]) / mean(lowResidualCosts2[[i]]))
+  lowRatio4 = c(lowRatio4, mean(lowNeuralCosts[[i]]) / mean(lowResidualCosts4[[i]]))
+  lowRatio5 = c(lowRatio5, mean(lowNeuralCosts[[i]]) / mean(lowResidualCosts5[[i]]))
 }
 
 png('graphs/HighCostRatio.png')
