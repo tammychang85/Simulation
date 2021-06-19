@@ -123,9 +123,9 @@ for (i in seq_along(flexibleK)){
 
 png('graphs/HighCostRatio.png')
 plot(1:length(flexibleK), highRatio2, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.75, 1.2), main='high penalty')
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='high penalty')
 axis(1, at=1:length(flexibleK), labels=flexibleK)
-axis(2, at=seq(0.75, 1.2, 0.05))
+axis(2, at=seq(0.65, 1.05, 0.05))
 lines(1:length(flexibleK), highRatio4, type='b', lty=2, lwd=2, col='orange')
 lines(1:length(flexibleK), highRatio5, type='b', lty=2, lwd=2, col='red')
 legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
@@ -134,11 +134,32 @@ dev.off()
 
 png('graphs/LowCostRatio.png')
 plot(1:length(flexibleK), lowRatio2, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.95, 1.1), main='high penalty')
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='low penalty')
 axis(1, at=1:length(flexibleK), labels=flexibleK)
-axis(2, at=seq(0.95, 1.1, 0.025))
+axis(2, at=seq(0.65, 1.05, 0.05))
 lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
 lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
 legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
        col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
 dev.off()
+
+
+x11(width=70,height=30)
+par(mfrow=c(1,2))
+plot(1:length(flexibleK), highRatio2, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='high penalty')
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0.65, 1.05, 0.05))
+lines(1:length(flexibleK), highRatio4, type='b', lty=2, lwd=2, col='orange')
+lines(1:length(flexibleK), highRatio5, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
+       col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
+
+plot(1:length(flexibleK), lowRatio2, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='low penalty')
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0.65, 1.05, 0.05))
+lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
+lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
+       col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
