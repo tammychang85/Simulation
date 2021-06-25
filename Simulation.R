@@ -194,7 +194,7 @@ for (eachRound in 1:round){
   print(paste0('round ', eachRound))
   # build trees
   neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
-  print('build neural gas tree')
+  print('builded neural gas tree')
   
   # simulate under different cost structures
   testSet = readRDS(paste0('testSets/', fileDate, '/testSet', eachRound,'.rds'))
@@ -202,6 +202,7 @@ for (eachRound in 1:round){
     print(paste0('flexibleK：', flexibleK[i]))
     # high penalty
     eachHighResults = simulate(neuralTree, testSet, standardTreeStructure, highCostStructure[[i]])
+    print('optimization done')
     
     highCost[[i]] = c(highCost[[i]], sum(eachHighResults$cost))
     highFlexibleOrders[[i]] = c(highFlexibleOrders[[i]], sum(eachHighResults$flexibleOrders))
