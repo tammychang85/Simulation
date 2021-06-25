@@ -88,7 +88,7 @@ for (eachRound in 1:round){
     ## high penalty
     saveRDS(highNeuralCosts, paste0('results/highNeuralCosts', eachRound, '.rds'))
     saveRDS(highResidualCosts2, paste0('results/highResidualCosts2', eachRound, '.rds'))
-    saveRDS(highResidualCosts5, paste0('results/highResidualCosts4', eachRound, '.rds'))
+    saveRDS(highResidualCosts4, paste0('results/highResidualCosts4', eachRound, '.rds'))
     saveRDS(highResidualCosts5, paste0('results/highResidualCosts5', eachRound, '.rds'))
     
     ## low penalty
@@ -163,6 +163,86 @@ lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
 lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
 legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
        col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
+### ---- computation time ----
+# read realizations and test set
+fileDate = '0619' # which ones to use
+realizations = readRDS(paste0('realizations/', fileDate, '/realizations.rds'))
+
+# computation time records
+neuralTime = list(build=rep(0, round), opt=rep(0, round))
+residualTime2 = list(build=rep(0, round), opt=rep(0, round)) # bin = 2
+residualTime4 = list(build=rep(0, round), opt=rep(0, round)) # bin = 4
+residualTime5 = list(build=rep(0, round), opt=rep(0, round)) # bin = 5
+
+# start simulating
+standardTreeStructure = c(1, 2, 4, 8, 16)
+residualTreeStructure4 = c(1, 4, 16, 64, 256)
+residualTreeStructure5 = c(1, 5, 25, 125, 625)
+costStructure = getCostStructure() # default cost structure
+round = 1
+
+for (eachRound in 1:round){
+  print(paste0('round ', eachRound))
+  
+  # build neural gas tree
+  neuralStartTime = proc.time()
+  neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
+  neuralTime$build[eachRound] = proc.time()[[3]] - neuralStartTime[[3]] # use elapsed time
+  print('build neural gas tree')
+  
+  # build residual tree
+  productStaticCovariates = getStaticCovariates()
+  
+  residualStartTime2 = proc.time()
+  residualTree2 = getResidualTree(realizations, productStaticCovariates, 2)
+  residualTime2$build[eachRound] = proc.time()[[3]] - residualStartTime2[[3]] # use elapsed time
+  print('build residual tree, bin = 2')
+  
+  residualStartTime4 = proc.time()
+  residualTree4 = getResidualTree(realizations, productStaticCovariates, 4)
+  residualTime4$build[eachRound] = proc.time()[[3]] - residualStartTime4[[3]] # use elapsed time
+  print('build residual tree, bin = 4')
+  
+  residualStartTime5 = proc.time()
+  residualTree5 = getResidualTree(realizations, productStaticCovariates, 5)
+  residualTime5$build[eachRound] = proc.time()[[3]] - residualStartTime5[[3]] # use elapsed time
+  print('build residual tree, bin = 5')
+  
+  # optimize
+  testSet = getTestSet(productStaticCovariates, testSize)
+  
+  neuralStartTime = proc.time()
+  simulate(neuralTree, testSet, standardTreeStructure, costStructure)
+  neuralTime$opt[eachRound] = proc.time()[[3]] - neuralStartTime[[3]] # use elapsed time
+  print('neural gas tree solved')
+  
+  residualStartTime2 = proc.time()
+  simulate(residualTree2, testSet, standardTreeStructure, costStructure)
+  residualTime2$opt[eachRound] = proc.time()[[3]] - residualStartTime2[[3]] # use elapsed time
+  print('residual tree bin 2 solved')
+  
+  residualStartTime4 = proc.time()
+  simulate(residualTree4, testSet, residualTreeStructure4, costStructure)
+  residualTime4$opt[eachRound] = proc.time()[[3]] - residualStartTime4[[3]] # use elapsed time
+  print('residual tree bin 4 solved')
+  
+  residualStartTime5 = proc.time()
+  simulate(residualTree5, testSet, residualTreeStructure5, costStructure)
+  residualTime5$opt[eachRound] = proc.time()[[3]] - residualStartTime5[[3]] # use elapsed time
+  print('residual tree bin 5 solved')
+  
+  # save the results every ten round
+  if ((eachRound %% 10) == 0){
+    saveRDS(neuralTime, paste0('results/computationTime/0619/neuralTime', eachRound, '.rds'))
+    saveRDS(residualTime2, paste0('results/computationTime/0619/residualTime2', eachRound, '.rds'))
+    saveRDS(residualTime4, paste0('results/computationTime/0619/residualTime4', eachRound, '.rds'))
+    saveRDS(residualTime5, paste0('results/computationTime/0619/residualTime5', eachRound, '.rds'))
+    
+    paste0('round ', eachRound, ' results saved')
+  }
+  print('---- done ----')
+  print('')
+}
 ### ---- analyze the neural gas tree further ----
 # read realizations and test set
 fileDate = '0619' # which ones to use
