@@ -584,6 +584,28 @@ simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) 
   return(results)
 }
 
+## using LP to build the scenario tree
+getLPTree = function(nodePerPeriod, realizations){
+  scenarioNum = nodePerPeriod[length(nodePerPeriod)]
+  periodNum = length(nodePerPeriod) - 1
+  realizationSize = dim(realizations$matrix)[2]
+  
+  objectiveFuncion = rep(1, periodNum * ((2 * scenarioNum * realizationSize) + scenarioNum + realizationSize) + (scenarioNum * realizationSize))
+  
+  # constraints
+  constraints = c()
+  indicatiors = rep(1, scenarioNum * realizationSize)
+  for (eachPeriod in 1:periodNum) {
+    u = rep(0, scenarioNum * realizationSize) # positive part
+    v = rep(0, scenarioNum * realizationSize) # nagtive part
+    estimatdDemands = rep(0, scenarioNum)
+    observedDemands = rep(0, realizationSize)
+    indicatiors = rep(0, scenarioNum * realizationSize)
+  }
+  
+  eachConstraint = c(u[])
+}
+
 ### ---- test ----
 
 realizationSize = 30
