@@ -546,7 +546,7 @@ getCost = function(scenarioTree, observedDemands, costStructure, orderPolicy) {
   }
   
   
-  return(list(costs=costs, flexibleOrderPolicy=fixedOrderPolicy, fixedOrderPolicy=fixedOrderPolicy))
+  return(list(costs=costs, flexibleOrderPolicy=flexibleOrderPolicy, fixedOrderPolicy=fixedOrderPolicy))
 }
 
 # calculate the average cost of a given data set
