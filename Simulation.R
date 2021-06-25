@@ -103,7 +103,7 @@ for (eachRound in 1:round){
   print('')
 }
 
-###  ---- visualization ----
+###  ---- visualization cost ratio ----
 # cost ratio between nerual gas and residual trees
 highRatio2 = c()
 highRatio4 = c()
@@ -163,3 +163,71 @@ lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
 lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
 legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
        col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
+### ---- analyze the neural gas tree further ----
+# read realizations and test set
+fileDate = '0619' # which ones to use
+realizations = readRDS(paste0('realizations/', fileDate, '/realizations.rds'))
+
+flexibleK = c(1.5, 3, 6) # parameters of the flexible cost
+highCostStructure = rep(list(0), length(flexibleK)) # cost structure under high peanlty with different flexibleK
+lowCostStructure = rep(list(0), length(flexibleK)) # cost structure under low peanlty with different flexibleK
+for (i in seq_along(flexibleK)) {
+  highCostStructure[[i]] = getCostStructure(flexibleK=flexibleK[i], penaltyK=4.5)
+  lowCostStructure[[i]] = getCostStructure(flexibleK=flexibleK[i], penaltyK=1.5)
+}
+
+# results under high and low penalty 
+highCost = rep(list(c()), 3)
+lowCost = rep(list(c()), 3)
+
+highFlexibleOrders = rep(list(c()), 3)
+lowFlexibleOrders = rep(list(c()), 3)
+
+highFixedOrders = rep(list(c()), 3)
+lowFixedOrders = rep(list(c()), 3)
+
+# start simulating
+round = 30
+standardTreeStructure = c(1, 2, 4, 8, 16)
+
+for (eachRound in 1:round){
+  print(paste0('round ', eachRound))
+  # build trees
+  neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
+  print('build neural gas tree')
+  
+  # simulate under different cost structures
+  testSet = readRDS(paste0('testSets/', fileDate, '/testSet', eachRound,'.rds'))
+  for (i in seq_along(flexibleK)) {
+    print(paste0('flexibleK：', flexibleK[i]))
+    # high penalty
+    eachHighResults = simulate(neuralTree, testSet, standardTreeStructure, highCostStructure[[i]])
+    
+    highCost[[i]] = c(highCost[[i]], sum(eachHighResults$cost))
+    highFlexibleOrders[[i]] = c(highFlexibleOrders[[i]], sum(eachHighResults$flexibleOrders))
+    highFixedOrders[[i]] = c(highFixedOrders[[i]], sum(eachHighResults$fixedOrders))
+    
+    # low penalty
+    eachLowResults = simulate(neuralTree, testSet, standardTreeStructure, lowCostStructure[[i]])
+    
+    lowCost[[i]] = c(lowCost[[i]], sum(eachLowResults$cost))
+    lowFlexibleOrders[[i]] = c(lowFlexibleOrders[[i]], sum(eachLowResults$flexibleOrders))
+    lowFixedOrders[[i]] = c(lowFixedOrders[[i]], sum(eachLowResults$fixedOrders))
+  }
+  
+  # save the results at final round
+  if (eachRound == round){
+    # high penalty
+    saveRDS(highCost, paste0('results/neuralGas/', fileDate, '/highCost.rds'))
+    saveRDS(highFlexibleOrders, paste0('results/neuralGas/', fileDate, '/highFlexibleOrders.rds'))
+    saveRDS(highFixedOrders, paste0('results/neuralGas/', fileDate, '/highFixedOrders.rds'))
+    # low penalty
+    saveRDS(lowCost, paste0('results/neuralGas/', fileDate, '/lowCost.rds'))
+    saveRDS(lowFlexibleOrders, paste0('results/neuralGas/', fileDate, '/lowFlexibleOrders.rds'))
+    saveRDS(lowFixedOrders, paste0('results/neuralGas/', fileDate, '/lowFixedOrders.rds'))
+    
+    paste0('round ', eachRound, ' results saved')
+  }
+  print('---- done ----')
+  print('')
+}
