@@ -319,3 +319,20 @@ for (eachRound in 1:round){
   print('---- done ----')
   print('')
 }
+###  ---- visualization suppier ratio ----
+highSupplierRatio = c()
+lowSupplierRatio = c()
+for (i in seq_along(flexibleK)){
+  highSupplierRatio = c(highSupplierRatio, mean(highFlexibleOrders[[i]]) / (mean(highFlexibleOrders[[i]]) + mean(highFixedOrders[[i]])))
+  lowSupplierRatio = c(lowSupplierRatio, mean(lowFlexibleOrders[[i]]) / (mean(lowFlexibleOrders[[i]]) + mean(lowFixedOrders[[i]])))
+}
+
+png('graphs/SupplierRatio.png')
+plot(1:length(flexibleK), highSupplierRatio, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='supplier ratio', xaxt='n', yaxt='n', ylim=c(0, 0.4))
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0, 0.4, 0.05))
+lines(1:length(flexibleK), lowSupplierRatio, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('high penalty', 'low penalty'), col=c('blue', 'red'), text.col=c('blue', 'red'),
+       lty=2, lwd=2, cex = 0.85)
+dev.off()
