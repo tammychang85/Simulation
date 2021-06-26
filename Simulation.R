@@ -179,7 +179,7 @@ standardTreeStructure = c(1, 2, 4, 8, 16)
 residualTreeStructure4 = c(1, 4, 16, 64, 256)
 residualTreeStructure5 = c(1, 5, 25, 125, 625)
 costStructure = getCostStructure() # default cost structure
-round = 1
+round = 30
 
 for (eachRound in 1:round){
   print(paste0('round ', eachRound))
@@ -243,6 +243,13 @@ for (eachRound in 1:round){
   print('---- done ----')
   print('')
 }
+
+
+mean(neuralTime$build)
+mean(neuralTime$opt)
+residualBuildTimeAvg = c(mean(residualTime2$build), mean(residualTime4$build), mean(residualTime5$build))
+residualOptTimeAvg = c(mean(residualTime2$opt), mean(residualTime4$opt), mean(residualTime5$opt))
+# dev.off()
 ### ---- analyze the neural gas tree further ----
 # read realizations and test set
 fileDate = '0619' # which ones to use
