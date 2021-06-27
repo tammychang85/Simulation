@@ -329,7 +329,7 @@ for (i in seq_along(flexibleK)){
 
 png('graphs/SupplierRatio.png')
 plot(1:length(flexibleK), highSupplierRatio, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='supplier ratio', xaxt='n', yaxt='n', ylim=c(0, 0.4))
+     xlab='flexible cost', ylab='Flexible ratio', xaxt='n', yaxt='n', ylim=c(0, 0.4))
 axis(1, at=1:length(flexibleK), labels=flexibleK)
 axis(2, at=seq(0, 0.4, 0.05))
 lines(1:length(flexibleK), lowSupplierRatio, type='b', lty=2, lwd=2, col='red')
