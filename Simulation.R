@@ -336,3 +336,120 @@ lines(1:length(flexibleK), lowSupplierRatio, type='b', lty=2, lwd=2, col='red')
 legend('topright', legend=c('high penalty', 'low penalty'), col=c('blue', 'red'), text.col=c('blue', 'red'),
        lty=2, lwd=2, cex = 0.85)
 dev.off()
+### ----  analyze the value of flexibility ----
+detach("package:scenario", unload = TRUE)
+# modified buildtree function: able to build tree with single path
+import::here(buildtree, .from = "BuildScenarioTree.R")
+
+fileDate = '0619' # which ones to use
+realizations = readRDS(paste0('realizations/', fileDate, '/realizations.rds'))
+
+singlePathTreeStructure = c(1, 1, 1, 1, 1)
+mediumTreeStructure = c(1, 4, 8, 16, 32)
+largeTreeStructure = c(1, 8, 16, 32, 32) # the tree size can not be larger than the realization size
+
+# start simulating
+round = 30
+
+highSingleCost = rep(list(c()), 3)
+highMediumCost = rep(list(c()), 3)
+highLargeCost = rep(list(c()), 3)
+
+lowSingleCost = rep(list(c()), 3)
+lowMediumCost = rep(list(c()), 3)
+lowLargeCost = rep(list(c()), 3)
+
+for (eachRound in 1:round){
+  print(paste0('round ', eachRound))
+  # build trees
+  neuralTreeSingle = getNeuralGasTree(singlePathTreeStructure, realizations)
+  print('builded neural gas tree single')
+  
+  neuralTreeMedium = getNeuralGasTree(mediumTreeStructure, realizations)
+  print('builded neural gas tree medium')
+  
+  neuralTreeLarge = getNeuralGasTree(largeTreeStructure, realizations)
+  print('builded neural gas tree large')
+  
+  # simulate under different cost structures
+  testSet = readRDS(paste0('testSets/', fileDate, '/testSet', eachRound,'.rds'))
+  for (i in seq_along(flexibleK)) {
+    print(paste0('flexibleK：', flexibleK[i]))
+    
+    # high penalty
+    eachHighCostSingle = simulate(neuralTreeSingle, testSet, singlePathTreeStructure, highCostStructure[[i]])$cost
+    eachHighCostMedium = simulate(neuralTreeMedium, testSet, mediumTreeStructure, highCostStructure[[i]])$cost
+    eachHighCostLarge = simulate(neuralTreeLarge, testSet, largeTreeStructure, highCostStructure[[i]])$cost
+    print('optimization done')
+    
+    highSingleCost[[i]] = c(highSingleCost[[i]], sum(eachHighCostSingle))
+    highMediumCost[[i]] = c(highMediumCost[[i]], sum(eachHighCostMedium))
+    highLargeCost[[i]] = c(highLargeCost[[i]], sum(eachHighCostLarge))
+    
+    # low penalty
+    eachLowCostSingle = simulate(neuralTreeSingle, testSet, singlePathTreeStructure, lowCostStructure[[i]])$cost
+    eachLowCostMedium = simulate(neuralTreeMedium, testSet, mediumTreeStructure, lowCostStructure[[i]])$cost
+    eachLowCostLarge = simulate(neuralTreeLarge, testSet, largeTreeStructure, lowCostStructure[[i]])$cost
+    
+    lowSingleCost[[i]] = c(lowSingleCost[[i]], sum(eachLowCostSingle))
+    lowMediumCost[[i]] = c(lowMediumCost[[i]], sum(eachLowCostMedium))
+    lowLargeCost[[i]] = c(lowLargeCost[[i]], sum(eachLowCostLarge))
+  }
+  
+  # save the results at final round
+  if (eachRound == round){
+    # high penalty
+    saveRDS(highSingleCost, paste0('results/neuralGas/', fileDate, '/highSingleCost', '.rds'))
+    saveRDS(highMediumCost, paste0('results/neuralGas/', fileDate, '/highMediumCost', '.rds'))
+    saveRDS(highLargeCost, paste0('results/neuralGas/', fileDate, '/highLargeCost', '.rds'))
+    # low penalty
+    saveRDS(lowSingleCost, paste0('results/neuralGas/', fileDate, '/lowSingleCost', '.rds'))
+    saveRDS(lowMediumCost, paste0('results/neuralGas/', fileDate, '/lowMediumCost', '.rds'))
+    saveRDS(lowLargeCost, paste0('results/neuralGas/', fileDate, '/lowLargeCost', '.rds'))
+    
+    paste0('round ', eachRound, ' results saved')
+  }
+  print('---- done ----')
+  print('')
+}
+
+
+###
+singleRatioHigh = c()
+mediumRatioHigh = c()
+largeRatioHigh = c()
+
+singleRatioLow = c()
+mediumRatioLow = c()
+largeRatioLow = c()
+
+for (i in seq_along(flexibleK)){
+  singleRatioHigh = c(singleRatioHigh, mean(highSingleCost[[i]]) / mean(highCost[[i]]))
+  mediumRatioHigh = c(mediumRatioHigh, mean(highMediumCost[[i]]) / mean(highCost[[i]]))
+  largeRatioHigh = c(largeRatioHigh, mean(highLargeCost[[i]]) / mean(highCost[[i]]))
+  
+  singleRatioLow = c(singleRatioLow, mean(lowSingleCost[[i]]) / mean(lowCost[[i]]))
+  mediumRatioLow = c(mediumRatioLow, mean(lowMediumCost[[i]]) / mean(lowCost[[i]]))
+  largeRatioLow = c(largeRatioLow, mean(lowLargeCost[[i]]) / mean(lowCost[[i]]))
+}
+
+
+x11(width=70,height=30)
+par(mfrow=c(1,2))
+plot(1:length(flexibleK), singleRatioHigh, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0, 3), main='high penalty',)
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0, 3, 0.5))
+lines(1:length(flexibleK), mediumRatioHigh, type='b', lty=2, lwd=2, col='green')
+lines(1:length(flexibleK), largeRatioHigh, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('single / stand', 'medium / stand', 'large / stand'),
+       col=c('blue', 'green', 'red'), text.col=c('blue', 'green', 'red'), lty=2, lwd=2, cex = 0.85)
+
+plot(1:length(flexibleK), singleRatioLow, type='b',lty=2, lwd=2, col='blue',
+     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0, 3), main='low penalty',)
+axis(1, at=1:length(flexibleK), labels=flexibleK)
+axis(2, at=seq(0, 3, 0.5))
+lines(1:length(flexibleK), mediumRatioLow, type='b', lty=2, lwd=2, col='green')
+lines(1:length(flexibleK), largeRatioLow, type='b', lty=2, lwd=2, col='red')
+legend('topright', legend=c('single / stand', 'medium / stand', 'large / stand'),
+       col=c('blue', 'green', 'red'), text.col=c('blue', 'green', 'red'), lty=2, lwd=2, cex = 0.85)
