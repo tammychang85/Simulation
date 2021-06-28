@@ -588,10 +588,13 @@ simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) 
 
 ## using LP to build the scenario tree
 getWDTree = function(nodePerPeriod, realizations){
+  simpleRealiztions = realizations
+  simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:4] 
+  nodePerPeriod = c(1, 2, 4)
   k = nodePerPeriod[length(nodePerPeriod)] # number of scenario paths
   t = length(nodePerPeriod) # number of periods
-  l = 25
-  #l = dim(realizations$matrix)[2] # number of observed demand paths
+  # l = 25
+  l = dim(simpleRealiztions$matrix)[2] # number of observed demand paths
   
   obj = c(rep(1, 2 * t * k * l), rep(0, k * (t + l))) # objective function：e+, e-, d', a
   types = c(rep('C', (t * k * (2 * l + 1))), rep('B', k * l))
@@ -661,6 +664,7 @@ getWDTree = function(nodePerPeriod, realizations){
   rhs = rep(0, (t * k * l))
   constraintDirections = rep('==', (t * k * l))
   for (eachConstraint in 1:(l + k)){
+    print(eachConstraint)
     rhs = c(rhs, 1)
   }
   for (eachConstraint in 1:k) {
@@ -679,6 +683,10 @@ getWDTree = function(nodePerPeriod, realizations){
   results = Rglpk_solve_LP(obj=obj, mat=constraintMatrix, dir=constraintDirections, rhs=rhs, max=FALSE, types=types)
   end = proc.time() - start
   print(end)
+  s=2 * t * k * l + 1
+  e = s + t * k - 1
+  wdTree = matrix(results$solution[s:e], ncol = k, byrow=TRUE)
+  wdTree
 }
 
 ### ---- test ----
@@ -688,7 +696,7 @@ realizations = getRealizations(realizationSize)
 productStaticCovariates = getStaticCovariates()
 
 simpleRealiztions = realizations
-simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, ] 
+simpleRealiztions$matrix = simpleRealiztions$matrix[1:2, 1:4] 
 
 simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:4] 
 
