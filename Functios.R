@@ -361,18 +361,20 @@ getConstraintsMatrix = function(objectiveFunction, nodePerPeriod, check=FALSE) {
       for (eachPeriod in 1:(periodNum - 1)){
         constraintCount = 1
         nodeSceanrioNum = scenarioNum / nodePerPeriod[eachPeriod + 1] # how many scenarios belong to a unique node of each period
-        for(eachUniqueNode in 1:nodePerPeriod[eachPeriod + 1]){
-          for(eachScenario in 1:(nodeSceanrioNum-1)){
-            eachConstraint = rep(0, VariableNum)
-            eachConstraint[scenarioNum * (periodNum + eachPeriod) + nodeSceanrioNum * (eachUniqueNode - 1) + 1] = 1
-            eachConstraint[scenarioNum * (periodNum + eachPeriod) + nodeSceanrioNum * (eachUniqueNode - 1) + 1 + eachScenario] = -1
-            constraints = c(constraints, eachConstraint)
-            if (check){
-              period = as.character(eachPeriod + 1)
-              constraintIndex = c(constraintIndex, paste0('flexible', period, '-', as.character(constraintCount))) 
-              constraintCount = constraintCount + 1
+        if (nodeSceanrioNum != 1){
+          for(eachUniqueNode in 1:nodePerPeriod[eachPeriod + 1]){
+            for(eachScenario in 1:(nodeSceanrioNum-1)){
+              eachConstraint = rep(0, VariableNum)
+              eachConstraint[scenarioNum * (periodNum + eachPeriod) + nodeSceanrioNum * (eachUniqueNode - 1) + 1] = 1
+              eachConstraint[scenarioNum * (periodNum + eachPeriod) + nodeSceanrioNum * (eachUniqueNode - 1) + 1 + eachScenario] = -1
+              constraints = c(constraints, eachConstraint)
+              if (check){
+                period = as.character(eachPeriod + 1)
+                constraintIndex = c(constraintIndex, paste0('flexible', period, '-', as.character(constraintCount))) 
+                constraintCount = constraintCount + 1
+              }
             }
-          }
+          } 
         }
       }
     }
@@ -585,25 +587,83 @@ simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) 
 }
 
 ## using LP to build the scenario tree
-getLPTree = function(nodePerPeriod, realizations){
-  scenarioNum = nodePerPeriod[length(nodePerPeriod)]
-  periodNum = length(nodePerPeriod) - 1
-  realizationSize = dim(realizations$matrix)[2]
+getWDTree = function(nodePerPeriod, realizations){
+  k = nodePerPeriod[length(nodePerPeriod)] # number of scenario paths
+  t = length(nodePerPeriod) - 1 # number of periods
+  l = dim(realizations$matrix)[2] # number of observed demand paths
   
-  objectiveFuncion = rep(1, periodNum * ((2 * scenarioNum * realizationSize) + scenarioNum + realizationSize) + (scenarioNum * realizationSize))
+  obj = c(rep(1, 2 * t * k * l), rep(0, k * (t + l))) # objective function：e+, e-, d', a
+  types = c(rep('C', (t * k * (2 * l + 1))), rep('B', k * l))
+  constraints = c()  
   
-  # constraints
-  constraints = c()
-  indicatiors = rep(1, scenarioNum * realizationSize)
-  for (eachPeriod in 1:periodNum) {
-    u = rep(0, scenarioNum * realizationSize) # positive part
-    v = rep(0, scenarioNum * realizationSize) # nagtive part
-    estimatdDemands = rep(0, scenarioNum)
-    observedDemands = rep(0, realizationSize)
-    indicatiors = rep(0, scenarioNum * realizationSize)
+  # e+ - e- - d' + (d)a = 0
+  for (eachT in 1:t) {
+    for (eachK in 1:k) {
+      for (eachL in 1:l) {
+        eachConstraint = rep(0, length(obj))
+        eachConstraint[(2 * (eachT - 1) * k * l) + (2 * (eachK - 1) * l) + (2 * eachL) - 1] = 1 # e+
+        eachConstraint[(2 * (eachT - 1) * k * l) + (2 * (eachK - 1) * l) + (2 * eachL)] = -1 # e-
+        eachConstraint[(2 * t * k * l) + ((eachT - 1) * k) + eachK] = -1 # d'
+        eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = simpleRealiztions$matrix[[(eachT + 1), eachL]] # a
+        constraints = c(constraints, eachConstraint)
+      }
+    }
+  }
+
+  # each scenario has at least one demand path (>= 1)
+  for (eachK in 1:k) {
+    eachConstraint = rep(0, length(obj))
+    for (eachL in 1:l) {
+      eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = 1      
+    }
+    constraints = c(constraints, eachConstraint)
   }
   
-  eachConstraint = c(u[])
+  # one demand path could only be assinged to one scenario (= 1)
+  for (eachL in 1:l) {
+    eachConstraint = rep(0, length(obj))
+    for (eachK in 1:k) {
+      eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = 1      
+    }
+    constraints = c(constraints, eachConstraint)
+  }
+  
+  constraintMatrix = matrix(constraints, ncol=length(obj), byrow=TRUE)
+  
+  rhs = rep(0, (t * k * l))
+  constraintDirections = rep('=', (t * k * l))
+  for (eachConstraint in 1:(l + k)){
+    rhs = c(rhs, 1)
+  }
+  for (eachConstraint in 1:k) {
+    constraintDirections = c(constraintDirections, '>=')
+  }
+  for (eachConstraint in 1:l) {
+    constraintDirections = c(constraintDirections, '=')
+  }
+  
+  # constraints of scenario path for period 1
+  for (eachK in 1:(k - 1)) {
+    eachConstraint = rep(0, length(obj))
+    eachConstraint[(2 * t * k * l) + 1] = 1
+    eachConstraint[(2 * t * k * l) + 1 + eachK] = -1
+    constraints = c(constraints, eachConstraint)
+  }
+  
+  # constraints of scenario path after period 1
+  if (t > 1){
+    for (eachT in 1:(t - 1)){
+      nodeSceanrioNum = k / nodePerPeriod[eachT + 1] # how many scenarios belong to a unique node of each period
+      for(eachUniqueNode in 1:nodePerPeriod[eachT + 1]){
+        for(eachScenario in 1:(nodeSceanrioNum-1)){
+          eachConstraint = rep(0, length(obj))
+          eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1] = 1
+          eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1 + eachScenario] = -1
+          # constraints = c(constraints, eachConstraint)
+        }
+      }
+    }
+  }
 }
 
 ### ---- test ----
@@ -615,9 +675,11 @@ productStaticCovariates = getStaticCovariates()
 simpleRealiztions = realizations
 simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, ] 
 
+simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:4] 
+
 # building tree test
-standardTreeStructure = c(1, 2, 4, 8, 16)
-simpleTreeStructure = c(1, 2, 4)
+standardTreeStructure = c(1, 2, 4, 16, 16)
+simpleTreeStructure = c(1, 4, 4)
 testSize = 50
 testSet = getTestSet(productStaticCovariates, testSize)
 
@@ -629,13 +691,13 @@ residudalTree = getResidualTree(realizations, productStaticCovariates, binNum)
 
 # LP test
 costStructure = getCostStructure()
-obj = getObjctiveFunction(residudalTree$branch_probabilities, standardTreeStructure, costStructure)
-constraints = getConstraintsMatrix(obj, standardTreeStructure)
-results = optimize(residudalTree, standardTreeStructure, costStructure)
+obj = getObjctiveFunction(neuralTree$branch_probabilities, standardTreeStructure, costStructure)
+constraints = getConstraintsMatrix(obj, standardTreeStructure, TRUE)
+results = optimize(neuralTree, standardTreeStructure, costStructure)
 
 # policy
 orderPolicy = getOrderPolicy(standardTreeStructure, results)
-flexibleOrderPolicy = decideFlexiblePolicy(residudalTree, testSet[, 1], orderPolicy)
+flexibleOrderPolicy = decideFlexiblePolicy(neuralTree, testSet[, 1], orderPolicy)
 
 # cost
 cost = getCost(residudalTree, testSet[, 1], costStructure, orderPolicy)
