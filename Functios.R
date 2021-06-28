@@ -589,8 +589,9 @@ simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) 
 ## using LP to build the scenario tree
 getWDTree = function(nodePerPeriod, realizations){
   k = nodePerPeriod[length(nodePerPeriod)] # number of scenario paths
-  t = length(nodePerPeriod) - 1 # number of periods
-  l = dim(realizations$matrix)[2] # number of observed demand paths
+  t = length(nodePerPeriod) # number of periods
+  l = 25
+  #l = dim(realizations$matrix)[2] # number of observed demand paths
   
   obj = c(rep(1, 2 * t * k * l), rep(0, k * (t + l))) # objective function：e+, e-, d', a
   types = c(rep('C', (t * k * (2 * l + 1))), rep('B', k * l))
@@ -604,7 +605,7 @@ getWDTree = function(nodePerPeriod, realizations){
         eachConstraint[(2 * (eachT - 1) * k * l) + (2 * (eachK - 1) * l) + (2 * eachL) - 1] = 1 # e+
         eachConstraint[(2 * (eachT - 1) * k * l) + (2 * (eachK - 1) * l) + (2 * eachL)] = -1 # e-
         eachConstraint[(2 * t * k * l) + ((eachT - 1) * k) + eachK] = -1 # d'
-        eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = simpleRealiztions$matrix[[(eachT + 1), eachL]] # a
+        eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = simpleRealiztions$matrix[[eachT, eachL]] # a
         constraints = c(constraints, eachConstraint)
       }
     }
@@ -628,25 +629,12 @@ getWDTree = function(nodePerPeriod, realizations){
     constraints = c(constraints, eachConstraint)
   }
   
-  constraintMatrix = matrix(constraints, ncol=length(obj), byrow=TRUE)
-  
-  rhs = rep(0, (t * k * l))
-  constraintDirections = rep('=', (t * k * l))
-  for (eachConstraint in 1:(l + k)){
-    rhs = c(rhs, 1)
-  }
-  for (eachConstraint in 1:k) {
-    constraintDirections = c(constraintDirections, '>=')
-  }
-  for (eachConstraint in 1:l) {
-    constraintDirections = c(constraintDirections, '=')
-  }
-  
   # constraints of scenario path for period 1
   for (eachK in 1:(k - 1)) {
     eachConstraint = rep(0, length(obj))
     eachConstraint[(2 * t * k * l) + 1] = 1
     eachConstraint[(2 * t * k * l) + 1 + eachK] = -1
+    # print(eachConstraint[1025:1056])
     constraints = c(constraints, eachConstraint)
   }
   
@@ -654,16 +642,43 @@ getWDTree = function(nodePerPeriod, realizations){
   if (t > 1){
     for (eachT in 1:(t - 1)){
       nodeSceanrioNum = k / nodePerPeriod[eachT + 1] # how many scenarios belong to a unique node of each period
-      for(eachUniqueNode in 1:nodePerPeriod[eachT + 1]){
-        for(eachScenario in 1:(nodeSceanrioNum-1)){
-          eachConstraint = rep(0, length(obj))
-          eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1] = 1
-          eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1 + eachScenario] = -1
-          # constraints = c(constraints, eachConstraint)
-        }
+      if (nodeSceanrioNum != 1){
+        for(eachUniqueNode in 1:nodePerPeriod[eachT + 1]){
+          for(eachScenario in 1:(nodeSceanrioNum-1)){
+            eachConstraint = rep(0, length(obj))
+            eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1] = 1
+            eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1 + eachScenario] = -1
+            # print(eachConstraint[1025:1056])
+            constraints = c(constraints, eachConstraint)
+          }
+        } 
       }
     }
   }
+  
+  constraintMatrix = matrix(constraints, ncol=length(obj), byrow=TRUE)
+  
+  rhs = rep(0, (t * k * l))
+  constraintDirections = rep('==', (t * k * l))
+  for (eachConstraint in 1:(l + k)){
+    rhs = c(rhs, 1)
+  }
+  for (eachConstraint in 1:k) {
+    constraintDirections = c(constraintDirections, '>=')
+  }
+  for (eachConstraint in 1:l) {
+    constraintDirections = c(constraintDirections, '==')
+  }
+  
+  remainedConstraints = dim(constraintMatrix)[1] - length(rhs)
+  for (eachConstraint in 1:remainedConstraints) {
+    rhs = c(rhs, 0)
+    constraintDirections = c(constraintDirections, '==')
+  }
+  start = proc.time()
+  results = Rglpk_solve_LP(obj=obj, mat=constraintMatrix, dir=constraintDirections, rhs=rhs, max=FALSE, types=types)
+  end = proc.time() - start
+  print(end)
 }
 
 ### ---- test ----
