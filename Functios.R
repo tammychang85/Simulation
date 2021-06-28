@@ -589,7 +589,7 @@ simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) 
 ## using LP to build the scenario tree
 getWDTree = function(nodePerPeriod, realizations){
   simpleRealiztions = realizations
-  simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:4] 
+  simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:6] 
   nodePerPeriod = c(1, 2, 4)
   k = nodePerPeriod[length(nodePerPeriod)] # number of scenario paths
   t = length(nodePerPeriod) # number of periods
