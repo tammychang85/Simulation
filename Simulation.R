@@ -105,151 +105,69 @@ for (eachRound in 1:round){
 
 ###  ---- visualization cost ratio ----
 # cost ratio between nerual gas and residual trees
-highRatio2 = c()
-highRatio4 = c()
-highRatio5 = c()
-lowRatio2 = c()
-lowRatio4 = c()
-lowRatio5 = c()
+highRatio2 = rep(list(c()), 3)
+highRatio4 = rep(list(c()), 3)
+highRatio5 = rep(list(c()), 3)
+lowRatio2 = rep(list(c()), 3)
+lowRatio4 = rep(list(c()), 3)
+lowRatio5 = rep(list(c()), 3)
 for (i in seq_along(flexibleK)){
-  highRatio2 = c(highRatio2, mean(highNeuralCosts[[i]]) / mean(highResidualCosts2[[i]]))
-  highRatio4 = c(highRatio4, mean(highNeuralCosts[[i]]) / mean(highResidualCosts4[[i]]))
-  highRatio5 = c(highRatio5, mean(highNeuralCosts[[i]]) / mean(highResidualCosts5[[i]]))
+  highRatio2[[i]] = highNeuralCosts[[i]] / highResidualCosts2[[i]]
+  highRatio4[[i]] = highNeuralCosts[[i]] / highResidualCosts4[[i]]
+  highRatio5[[i]] = highNeuralCosts[[i]] / highResidualCosts5[[i]]
   
-  lowRatio2 = c(lowRatio2, mean(lowNeuralCosts[[i]]) / mean(lowResidualCosts2[[i]]))
-  lowRatio4 = c(lowRatio4, mean(lowNeuralCosts[[i]]) / mean(lowResidualCosts4[[i]]))
-  lowRatio5 = c(lowRatio5, mean(lowNeuralCosts[[i]]) / mean(lowResidualCosts5[[i]]))
+  lowRatio2[[i]] = lowNeuralCosts[[i]] / lowResidualCosts2[[i]]
+  lowRatio4[[i]] = lowNeuralCosts[[i]] / lowResidualCosts4[[i]]
+  lowRatio5[[i]] = lowNeuralCosts[[i]] / lowResidualCosts5[[i]]
 }
 
-png('graphs/HighCostRatio.png')
-plot(1:length(flexibleK), highRatio2, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='high penalty')
-axis(1, at=1:length(flexibleK), labels=flexibleK)
-axis(2, at=seq(0.65, 1.05, 0.05))
-lines(1:length(flexibleK), highRatio4, type='b', lty=2, lwd=2, col='orange')
-lines(1:length(flexibleK), highRatio5, type='b', lty=2, lwd=2, col='red')
-legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
-       col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
-dev.off()
+highPercentile2 = lapply(highRatio2, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
+highPercentile4 = lapply(highRatio4, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
+highPercentile5 = lapply(highRatio5, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
 
-png('graphs/LowCostRatio.png')
-plot(1:length(flexibleK), lowRatio2, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='low penalty')
-axis(1, at=1:length(flexibleK), labels=flexibleK)
-axis(2, at=seq(0.65, 1.05, 0.05))
-lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
-lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
-legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
-       col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
-dev.off()
+lowPercentile2 = lapply(lowRatio2, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
+lowPercentile4 = lapply(lowRatio4, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
+lowPercentile5 = lapply(lowRatio5, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
 
 
-x11(width=70,height=30)
-par(mfrow=c(1,2))
-plot(1:length(flexibleK), highRatio2, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='high penalty')
-axis(1, at=1:length(flexibleK), labels=flexibleK)
-axis(2, at=seq(0.65, 1.05, 0.05))
-lines(1:length(flexibleK), highRatio4, type='b', lty=2, lwd=2, col='orange')
-lines(1:length(flexibleK), highRatio5, type='b', lty=2, lwd=2, col='red')
-legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
-       col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
+highFlexible1.5 = data.frame(bin2=highRatio2[[1]], bin4=highRatio4[[1]], bin5=highRatio5[[1]])
+highFlexible6 = data.frame(bin2=highRatio2[[3]], bin4=highRatio4[[3]], bin5=highRatio5[[3]])
 
-plot(1:length(flexibleK), lowRatio2, type='b',lty=2, lwd=2, col='blue',
-     xlab='flexible cost', ylab='cost ratio', xaxt='n', yaxt='n', ylim=c(0.65, 1.05), main='low penalty')
-axis(1, at=1:length(flexibleK), labels=flexibleK)
-axis(2, at=seq(0.65, 1.05, 0.05))
-lines(1:length(flexibleK), lowRatio4, type='b', lty=2, lwd=2, col='orange')
-lines(1:length(flexibleK), lowRatio5, type='b', lty=2, lwd=2, col='red')
-legend('topright', legend=c('nt / rt (bin2)', 'nt / rt (bin4)', 'nt / rt (bin5)'),
-       col=c('blue', 'orange', 'red'), text.col=c('blue', 'orange', 'red'), lty=2, lwd=2, cex = 0.85)
-### ---- computation time ----
-# read realizations and test set
-fileDate = '0619' # which ones to use
-realizations = readRDS(paste0('realizations/', fileDate, '/realizations.rds'))
-
-# computation time records
-neuralTime = list(build=rep(0, round), opt=rep(0, round))
-residualTime2 = list(build=rep(0, round), opt=rep(0, round)) # bin = 2
-residualTime4 = list(build=rep(0, round), opt=rep(0, round)) # bin = 4
-residualTime5 = list(build=rep(0, round), opt=rep(0, round)) # bin = 5
-
-# start simulating
-standardTreeStructure = c(1, 2, 4, 8, 16)
-residualTreeStructure4 = c(1, 4, 16, 64, 256)
-residualTreeStructure5 = c(1, 5, 25, 125, 625)
-costStructure = getCostStructure() # default cost structure
-round = 30
-
-for (eachRound in 1:round){
-  print(paste0('round ', eachRound))
-  
-  # build neural gas tree
-  neuralStartTime = proc.time()
-  neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
-  neuralTime$build[eachRound] = proc.time()[[3]] - neuralStartTime[[3]] # use elapsed time
-  print('build neural gas tree')
-  
-  # build residual tree
-  productStaticCovariates = getStaticCovariates()
-  
-  residualStartTime2 = proc.time()
-  residualTree2 = getResidualTree(realizations, productStaticCovariates, 2)
-  residualTime2$build[eachRound] = proc.time()[[3]] - residualStartTime2[[3]] # use elapsed time
-  print('build residual tree, bin = 2')
-  
-  residualStartTime4 = proc.time()
-  residualTree4 = getResidualTree(realizations, productStaticCovariates, 4)
-  residualTime4$build[eachRound] = proc.time()[[3]] - residualStartTime4[[3]] # use elapsed time
-  print('build residual tree, bin = 4')
-  
-  residualStartTime5 = proc.time()
-  residualTree5 = getResidualTree(realizations, productStaticCovariates, 5)
-  residualTime5$build[eachRound] = proc.time()[[3]] - residualStartTime5[[3]] # use elapsed time
-  print('build residual tree, bin = 5')
-  
-  # optimize
-  testSet = getTestSet(productStaticCovariates, testSize)
-  
-  neuralStartTime = proc.time()
-  simulate(neuralTree, testSet, standardTreeStructure, costStructure)
-  neuralTime$opt[eachRound] = proc.time()[[3]] - neuralStartTime[[3]] # use elapsed time
-  print('neural gas tree solved')
-  
-  residualStartTime2 = proc.time()
-  simulate(residualTree2, testSet, standardTreeStructure, costStructure)
-  residualTime2$opt[eachRound] = proc.time()[[3]] - residualStartTime2[[3]] # use elapsed time
-  print('residual tree bin 2 solved')
-  
-  residualStartTime4 = proc.time()
-  simulate(residualTree4, testSet, residualTreeStructure4, costStructure)
-  residualTime4$opt[eachRound] = proc.time()[[3]] - residualStartTime4[[3]] # use elapsed time
-  print('residual tree bin 4 solved')
-  
-  residualStartTime5 = proc.time()
-  simulate(residualTree5, testSet, residualTreeStructure5, costStructure)
-  residualTime5$opt[eachRound] = proc.time()[[3]] - residualStartTime5[[3]] # use elapsed time
-  print('residual tree bin 5 solved')
-  
-  # save the results every ten round
-  if ((eachRound %% 10) == 0){
-    saveRDS(neuralTime, paste0('results/computationTime/0619/neuralTime', eachRound, '.rds'))
-    saveRDS(residualTime2, paste0('results/computationTime/0619/residualTime2', eachRound, '.rds'))
-    saveRDS(residualTime4, paste0('results/computationTime/0619/residualTime4', eachRound, '.rds'))
-    saveRDS(residualTime5, paste0('results/computationTime/0619/residualTime5', eachRound, '.rds'))
-    
-    paste0('round ', eachRound, ' results saved')
-  }
-  print('---- done ----')
-  print('')
-}
+lowFlexible1.5 = data.frame(bin2=lowRatio2[[1]], bin4=lowRatio4[[1]], bin5=lowRatio5[[1]])
+lowFlexible6 = data.frame(bin2=lowRatio2[[3]], bin4=lowRatio4[[3]], bin5=lowRatio5[[3]])
 
 
-mean(neuralTime$build)
-mean(neuralTime$opt)
-residualBuildTimeAvg = c(mean(residualTime2$build), mean(residualTime4$build), mean(residualTime5$build))
-residualOptTimeAvg = c(mean(residualTime2$opt), mean(residualTime4$opt), mean(residualTime5$opt))
-# dev.off()
+## box plot
+# high penalty
+x11(width=70,height=60)
+par(mfrow=c(2,2))
+
+boxplot(highFlexible1.5, outline=FALSE, ylim=c(0.35, 1.15), xlab='bin num (residual tree)', ylab='cost ratio (neuralGas / residual)')
+mytitle = "high penalty(= 4.5 * flexible cost)"
+mysubtitle = "flexible cost = 1.5"
+mtext(side=3, line=2, cex=1.2, mytitle)
+mtext(side=3, line=0.5, cex=1.1, mysubtitle)
+
+boxplot(highFlexible6, outline=FALSE, ylim=c(0.35, 1.15), xlab='bin num (residual tree)', ylab='cost ratio (neuralGas / residual)')
+mytitle = "high penalty(= 4.5 * flexible cost)"
+mysubtitle = "flexible cost = 6"
+mtext(side=3, line=2, cex=1.2, mytitle)
+mtext(side=3, line=0.5, cex=1.1, mysubtitle)
+
+# low penalty
+boxplot(lowFlexible1.5, outline=FALSE, ylim=c(0.6, 1.3), xlab='bin num (residual tree)', ylab='cost ratio (neuralGas / residual)')
+mytitle = "low penalty(= 1.5 * flexible cost)"
+mysubtitle = "flexible cost = 1.5"
+mtext(side=3, line=2, cex=1.2, mytitle)
+mtext(side=3, line=0.5, cex=1.1, mysubtitle)
+
+boxplot(lowFlexible6, outline=FALSE, ylim=c(0.6, 1.3), xlab='bin num (residual tree)', ylab='cost ratio (neuralGas / residual)')
+mytitle = "low penalty(= 1.5 * flexible cost)"
+mysubtitle = "flexible cost = 6"
+mtext(side=3, line=2, cex=1.2, mytitle)
+mtext(side=3, line=0.5, cex=1.1, mysubtitle)
+
+
 ### ---- analyze the neural gas tree further ----
 # read realizations and test set
 fileDate = '0619' # which ones to use
