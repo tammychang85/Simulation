@@ -1,7 +1,8 @@
 ### ---- packages ----
 ## neural gas tree
-library(scenario)
-#import::here(buildtree, .from = "BuildScenarioTree.R")
+#library(scenario)
+# modified buildtree function, able to build tree wiirh only one path
+import::here(buildtree, .from = "BuildScenarioTree.R")
 
 ## solver
 library(Rglpk)
@@ -84,7 +85,7 @@ getTestSet = function(staticCovariates, testSize){
 
 
 ## neural gas tree
-# receive a vector of nodal structure and return a matrix of tree structure
+# receive a vector of tree structure and return a matrix of tree structure
 getTreeStructureMatrix = function(nodePerPeriod){
   
   periodLength = length(nodePerPeriod)
@@ -284,7 +285,7 @@ getVariableNames = function(nodePerPeriod) {
   return(variableNames)
 }
 
-# check to show objective function with variables' names or not
+# check: to show objective function with variables' names or not
 getObjctiveFunction = function(probability, nodePerPeriod, costStructure, check=FALSE) {
   
   obj = c() # the objective function
@@ -312,7 +313,7 @@ getObjctiveFunction = function(probability, nodePerPeriod, costStructure, check=
   return(obj)
 }
 
-# check to show objective function with variables' names or not
+# check: to show objective function with variables' names or not
 getConstraintsMatrix = function(objectiveFunction, nodePerPeriod, check=FALSE) {
   
   scenarioNum = nodePerPeriod[length(nodePerPeriod)]
@@ -520,7 +521,7 @@ decideFlexiblePolicy = function(scenarioTree, observedDemands, orderPolicy) {
 
 
 ## calculate costs
-# calculate all periods of cost of the given demand path order policy
+# calculate the cost for a demand path under the given order policy
 getCost = function(scenarioTree, observedDemands, costStructure, orderPolicy) {
   
   fixedOrderPolicy = orderPolicy[, dim(orderPolicy)[2]]
@@ -573,7 +574,7 @@ getAverageCost = function(scenarioTree, testingDataSet, costStructure, orderPoli
 }
 
 
-## coordinate functions above to do a round of simulation
+## coordinate functions above to get the simulation result of the scenario tree
 simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) {
   
   # get optimal solutions
@@ -585,146 +586,3 @@ simulate = function(scenarioTree, testingDataSet, nodePerPeriod, costStructure) 
   
   return(results)
 }
-
-## using LP to build the scenario tree
-getWDTree = function(nodePerPeriod, realizations){
-  simpleRealiztions = realizations
-  simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:6] 
-  nodePerPeriod = c(1, 2, 4)
-  k = nodePerPeriod[length(nodePerPeriod)] # number of scenario paths
-  t = length(nodePerPeriod) # number of periods
-  # l = 25
-  l = dim(simpleRealiztions$matrix)[2] # number of observed demand paths
-  
-  obj = c(rep(1, 2 * t * k * l), rep(0, k * (t + l))) # objective function：e+, e-, d', a
-  types = c(rep('C', (t * k * (2 * l + 1))), rep('B', k * l))
-  constraints = c()  
-  
-  # e+ - e- - d' + (d)a = 0
-  for (eachT in 1:t) {
-    for (eachK in 1:k) {
-      for (eachL in 1:l) {
-        eachConstraint = rep(0, length(obj))
-        eachConstraint[(2 * (eachT - 1) * k * l) + (2 * (eachK - 1) * l) + (2 * eachL) - 1] = 1 # e+
-        eachConstraint[(2 * (eachT - 1) * k * l) + (2 * (eachK - 1) * l) + (2 * eachL)] = -1 # e-
-        eachConstraint[(2 * t * k * l) + ((eachT - 1) * k) + eachK] = -1 # d'
-        eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = simpleRealiztions$matrix[[eachT, eachL]] # a
-        constraints = c(constraints, eachConstraint)
-      }
-    }
-  }
-
-  # each scenario has at least one demand path (>= 1)
-  for (eachK in 1:k) {
-    eachConstraint = rep(0, length(obj))
-    for (eachL in 1:l) {
-      eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = 1      
-    }
-    constraints = c(constraints, eachConstraint)
-  }
-  
-  # one demand path could only be assinged to one scenario (= 1)
-  for (eachL in 1:l) {
-    eachConstraint = rep(0, length(obj))
-    for (eachK in 1:k) {
-      eachConstraint[(t * k * (2 * l +1)) + ((eachK - 1) * l) + eachL] = 1      
-    }
-    constraints = c(constraints, eachConstraint)
-  }
-  
-  # constraints of scenario path for period 1
-  for (eachK in 1:(k - 1)) {
-    eachConstraint = rep(0, length(obj))
-    eachConstraint[(2 * t * k * l) + 1] = 1
-    eachConstraint[(2 * t * k * l) + 1 + eachK] = -1
-    # print(eachConstraint[1025:1056])
-    constraints = c(constraints, eachConstraint)
-  }
-  
-  # constraints of scenario path after period 1
-  if (t > 1){
-    for (eachT in 1:(t - 1)){
-      nodeSceanrioNum = k / nodePerPeriod[eachT + 1] # how many scenarios belong to a unique node of each period
-      if (nodeSceanrioNum != 1){
-        for(eachUniqueNode in 1:nodePerPeriod[eachT + 1]){
-          for(eachScenario in 1:(nodeSceanrioNum-1)){
-            eachConstraint = rep(0, length(obj))
-            eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1] = 1
-            eachConstraint[(2 * t * k * l) + (eachT * k) + (nodeSceanrioNum * (eachUniqueNode - 1)) + 1 + eachScenario] = -1
-            # print(eachConstraint[1025:1056])
-            constraints = c(constraints, eachConstraint)
-          }
-        } 
-      }
-    }
-  }
-  
-  constraintMatrix = matrix(constraints, ncol=length(obj), byrow=TRUE)
-  
-  rhs = rep(0, (t * k * l))
-  constraintDirections = rep('==', (t * k * l))
-  for (eachConstraint in 1:(l + k)){
-    print(eachConstraint)
-    rhs = c(rhs, 1)
-  }
-  for (eachConstraint in 1:k) {
-    constraintDirections = c(constraintDirections, '>=')
-  }
-  for (eachConstraint in 1:l) {
-    constraintDirections = c(constraintDirections, '==')
-  }
-  
-  remainedConstraints = dim(constraintMatrix)[1] - length(rhs)
-  for (eachConstraint in 1:remainedConstraints) {
-    rhs = c(rhs, 0)
-    constraintDirections = c(constraintDirections, '==')
-  }
-  start = proc.time()
-  results = Rglpk_solve_LP(obj=obj, mat=constraintMatrix, dir=constraintDirections, rhs=rhs, max=FALSE, types=types)
-  end = proc.time() - start
-  print(end)
-  s=2 * t * k * l + 1
-  e = s + t * k - 1
-  wdTree = matrix(results$solution[s:e], ncol = k, byrow=TRUE)
-  wdTree
-}
-
-### ---- test ----
-
-realizationSize = 30
-realizations = getRealizations(realizationSize)
-productStaticCovariates = getStaticCovariates()
-
-simpleRealiztions = realizations
-simpleRealiztions$matrix = simpleRealiztions$matrix[1:2, 1:4] 
-
-simpleRealiztions$matrix = simpleRealiztions$matrix[1:3, 1:4] 
-
-# building tree test
-standardTreeStructure = c(1, 2, 4, 16, 16)
-simpleTreeStructure = c(1, 4, 4)
-testSize = 50
-testSet = getTestSet(productStaticCovariates, testSize)
-
-neuralTree = getNeuralGasTree(standardTreeStructure, realizations)
-simpleNeuralTree = getNeuralGasTree(simpleTreeStructure, simpleRealiztions)
-
-binNum = 2
-residudalTree = getResidualTree(realizations, productStaticCovariates, binNum)
-
-# LP test
-costStructure = getCostStructure()
-obj = getObjctiveFunction(neuralTree$branch_probabilities, standardTreeStructure, costStructure)
-constraints = getConstraintsMatrix(obj, standardTreeStructure, TRUE)
-results = optimize(neuralTree, standardTreeStructure, costStructure)
-
-# policy
-orderPolicy = getOrderPolicy(standardTreeStructure, results)
-flexibleOrderPolicy = decideFlexiblePolicy(neuralTree, testSet[, 1], orderPolicy)
-
-# cost
-cost = getCost(residudalTree, testSet[, 1], costStructure, orderPolicy)
-avgCost = getAverageCost(residudalTree, testSet, costStructure, orderPolicy)
-
-results = simulate(neuralTree, testSet, standardTreeStructure, costStructure)
-results$cost
