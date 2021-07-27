@@ -4,12 +4,14 @@
 1. Simulation.Rproj：R project 的檔案
 2. Functions.R：存放所有模擬用到的套件以及函示(欲進行新的一輪模擬時須先跑過該檔案，若選擇直接使用舊有的資料則不用)
 3. Simulation.R：用來進行模擬以及產出圖表的檔案
-4. results 資料夾：依模擬日期存放模擬結果的資料
-5. realizations 資料夾：依模擬日期存放模擬用的訓練集
-6. testsSets 資料夾：依模擬日期存放模擬用的測試集
-7. graphs 資料夾：存放模擬結果的圖
+4. BuildScenarioTree.R 用來建構 Neural gas tee 的函示，為原套件函式的修改版，可以建造只含有1條 scenario path 的 Neural gas tree
+5. results 資料夾：依模擬日期存放模擬結果的資料
+6. realizations 資料夾：依模擬日期存放模擬用的訓練集
+7. testsSets 資料夾：依模擬日期存放模擬用的測試集
+8. graphs 資料夾：存放模擬結果的圖
 
 其中每個資料夾皆含有一個日期為 "0619" 的子資料夾，裡面存放的果為論文使用的資料
+
 
 ** results 資料夾詳細說明 **
 點進以日期命名的子資料夾後應包含 20 個 rds 檔，分別為：
@@ -57,6 +59,7 @@ residualTime5.rds Residual tree bin=5 的運算時間
 
 ** Simulation.R ** 詳細說明：
 共分為兩大部分：simulation & visualization。
+
 simulation 負責實驗模擬，可以設定 simulationMode 這個參數來決定模擬的模式。若 simulationMode 設為 TRUE(預設)，
 則程式會直接自 results 資料夾讀取資料(預設讀取 "0619"，即論文使用的資料，也可以修改 resultFilePath 的參數自行選擇讀取哪天的資料夾)，不進行新的模擬。
 而若 simulationMode 設為 FALSE，則程式會進行新的模擬，並將結果依日期儲存在資料夾，注意若要進行新的模擬需先跑過 Function.R 檔，載入需要的套件與函式。
