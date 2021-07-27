@@ -8,6 +8,7 @@
 5. realizations 資料夾：依模擬日期存放模擬用的訓練集
 6. testsSets 資料夾：依模擬日期存放模擬用的測試集
 7. graphs 資料夾：存放模擬結果的圖
+
 其中每個資料夾皆含有一個日期為 "0619" 的子資料夾，裡面存放的果為論文使用的資料
 
 ** results 資料夾詳細說明 **
@@ -59,4 +60,5 @@ residualTime5.rds Residual tree bin=5 的運算時間
 simulation 負責實驗模擬，可以設定 simulationMode 這個參數來決定模擬的模式。若 simulationMode 設為 TRUE(預設)，
 則程式會直接自 results 資料夾讀取資料(預設讀取 "0619"，即論文使用的資料，也可以修改 resultFilePath 的參數自行選擇讀取哪天的資料夾)，不進行新的模擬。
 而若 simulationMode 設為 FALSE，則程式會進行新的模擬，並將結果依日期儲存在資料夾，注意若要進行新的模擬需先跑過 Function.R 檔，載入需要的套件與函式。
+
 visualization 負責資料視覺化和進行各種檢定以及區間計算，在 simulation 部分取得資料後即可使用。
