@@ -187,7 +187,7 @@ if(simulationMode){
       highResidualCosts4[[i]] = c(highResidualCosts4[[i]], sum(HighResidualResults4))
       highResidualCosts5[[i]] = c(highResidualCosts5[[i]], sum(highResidualResults5))
       
-      highFlexibleOrders[[i]] = c(highFlexibleOrders[[i]], sum(eachHighResults$flexibleOrders)) # sum up the average flexible orders of four periods
+      highFlexibleOrders[[i]] = c(highFlexibleOrders[[i]], sum(highNeuralResults$flexibleOrders)) # sum up the average flexible orders of four periods
       highFixedOrders[[i]] = c(highFixedOrders[[i]], sum(highNeuralResults$fixedOrders)) # sum up the average fiexd orders of four periods
       
       ## low penalty
