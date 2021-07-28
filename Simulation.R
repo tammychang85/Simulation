@@ -414,23 +414,35 @@ legend('topright', legend=c('high penalty', 'low penalty'), col=c('blue', 'red')
 ## --- value of flexibility ---
 # record the cost ratio between different size of neural gas trees under high & low penalty cost structure
 stdRatioHigh = rep(list(c()), 3) # cost ratio = cost of the standard neural gas tree (binary tree) / cost of the single path neural gas tree
-mediumRatioHigh = rep(list(c()), 3) # cost ratio = cost of the large neural gas tree/ cost of the single path neural gas tree
+largeRatioHigh = rep(list(c()), 3) # cost ratio = cost of the large neural gas tree/ cost of the single path neural gas tree
 stdRatioLow = rep(list(c()), 3)
-mediumRatioLow = rep(list(c()), 3)
+largeRatioLow = rep(list(c()), 3)
 # calculate ratios
-for (i in seq_along(flexibleK)){
-  stdRatioHigh[[i]] = highCost[[i]] / highSingleCost[[i]]
-  mediumRatioHigh[[i]] = highMediumCost[[i]] / highSingleCost[[i]]
-  
-  stdRatioLow[[i]] = lowCost[[i]] / lowSingleCost[[i]]
-  mediumRatioLow[[i]] = lowMediumCost[[i]] / lowSingleCost[[i]]
+if(simulationMode){
+  highCost = readRDS(paste0(resultFilePath, '/', 'highCost.rds'))
+  lowCost = readRDS(paste0(resultFilePath, '/', 'lowCost.rds'))
+  for (i in seq_along(flexibleK)){
+    stdRatioHigh[[i]] = highCost[[i]] / highSingleCost[[i]]
+    largeRatioHigh[[i]] = highLargeCost[[i]] / highSingleCost[[i]]
+    
+    stdRatioLow[[i]] = lowCost[[i]] / lowSingleCost[[i]]
+    largeRatioLow[[i]] = lowLargeCost[[i]] / lowSingleCost[[i]]
+  }
+}else{
+  for (i in seq_along(flexibleK)){
+    stdRatioHigh[[i]] = highNeuralCosts[[i]] / highSingleCost[[i]]
+    largeRatioHigh[[i]] = highLargeCost[[i]] / highSingleCost[[i]]
+    
+    stdRatioLow[[i]] = lowNeuralCosts[[i]] / lowSingleCost[[i]]
+    largeRatioLow[[i]] = lowLargeCost[[i]] / lowSingleCost[[i]]
+  }
 }
 
 ## box plot
-highRatio1.5 = data.frame(standard=stdRatioHigh[[1]], large=mediumRatioHigh[[1]])
-highRatio6 = data.frame(standard=stdRatioHigh[[3]], large=mediumRatioHigh[[3]])
-lowRatio1.5 = data.frame(standard=stdRatioLow[[1]], large=mediumRatioLow[[1]])
-lowRatio6 = data.frame(standard=stdRatioLow[[3]], large=mediumRatioLow[[3]])
+highRatio1.5 = data.frame(standard=stdRatioHigh[[1]], large=largeRatioHigh[[1]])
+highRatio6 = data.frame(standard=stdRatioHigh[[3]], large=largeRatioHigh[[3]])
+lowRatio1.5 = data.frame(standard=stdRatioLow[[1]], large=largeRatioLow[[1]])
+lowRatio6 = data.frame(standard=stdRatioLow[[3]], large=largeRatioLow[[3]])
 
 x11(width=60,height=60)
 par(mfrow=c(2,2))
