@@ -2,7 +2,7 @@
 
 # flag to determine if to do a new simulation or not  
 # TRUE: to use the existed data from the results file (default); FALSE: to simulate from the scratch 
-simulationMode = FALSE
+simulationMode = TRUE
 
 if(simulationMode){
   # to determine the flexible cost (flexible cost = flexibleK * fiexd cost)
