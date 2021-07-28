@@ -1,6 +1,7 @@
 ### ---- packages ----
 ## neural gas tree
 #library(scenario)
+
 # modified buildtree function, able to build tree wiirh only one path
 import::here(buildtree, .from = "BuildScenarioTree.R")
 
@@ -522,6 +523,7 @@ decideFlexiblePolicy = function(scenarioTree, observedDemands, orderPolicy) {
 
 ## calculate costs
 # calculate the cost for a demand path under the given order policy
+# return cost and orders of four periods for both suppliers
 getCost = function(scenarioTree, observedDemands, costStructure, orderPolicy) {
   
   fixedOrderPolicy = orderPolicy[, dim(orderPolicy)[2]]
@@ -553,6 +555,7 @@ getCost = function(scenarioTree, observedDemands, costStructure, orderPolicy) {
 }
 
 # calculate the average cost of a given data set
+# return average cost and orders of four periods for both suppliers
 getAverageCost = function(scenarioTree, testingDataSet, costStructure, orderPolicy) {
  
   costs = rep(0, 4) # costs of four period
