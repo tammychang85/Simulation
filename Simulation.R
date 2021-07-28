@@ -125,7 +125,7 @@ if(simulationMode){
   
   
   ## start simulating
-  rounds = 1 # total simulation rounds
+  rounds = 30 # total simulation rounds
   for (eachRound in 1:rounds){
     print(paste0('round ', eachRound))
     
