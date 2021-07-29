@@ -2,7 +2,7 @@
 
 # flag to determine if to do a new simulation or not  
 # TRUE: to use the existed data from the results file (default); FALSE: to simulate from the scratch 
-simulationMode = TRUE
+simulationMode = FALSE
 
 if(simulationMode){
   # to determine the flexible cost (flexible cost = flexibleK * fiexd cost)
@@ -125,7 +125,7 @@ if(simulationMode){
   
   
   ## start simulating
-  rounds = 30 # total simulation rounds
+  rounds = 3 # total simulation rounds
   for (eachRound in 1:rounds){
     print(paste0('round ', eachRound))
     
@@ -229,7 +229,7 @@ if(simulationMode){
     }
     
     # save the results at the final round
-    if (eachRound == 30){
+    if (eachRound == rounds){
       ## high penalty
       saveRDS(highNeuralCosts, paste0(resultFilePath, '/', 'highNeuralCosts.rds'))
       saveRDS(highSingleCost, paste0(resultFilePath, '/', 'highSingleCost.rds'))
@@ -321,8 +321,8 @@ mtext(side=3, line=0.5, cex=1.1, mysubtitle)
 
 
 ## the 10th and 90th quantile for each cost ratio
-highPercentile2 = lapply(highRatio2, function(x){round(quantile(x, c(0.1, 0.9)), 3)}) # Percentile of ratio between neural gas tree & residual tree (bin=2) under high penalty cost structure
-highPercentile4 = lapply(highRatio4, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
+highPercentile2 = lapply(highRatio2, function(x){round(quantile(x, c(0.1, 0.9)), 3)}) # Percentile of cost ratio between neural gas tree & residual tree (bin=2) under high penalty cost structure
+highPercentile4 = lapply(highRatio4, function(x){round(quantile(x, c(0.1, 0.9)), 3)}) # Percentile of cost ratio between neural gas tree & residual tree (bin=4) under high penalty cost structure
 highPercentile5 = lapply(highRatio5, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
 lowPercentile2 = lapply(lowRatio2, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
 lowPercentile4 = lapply(lowRatio4, function(x){round(quantile(x, c(0.1, 0.9)), 3)})
