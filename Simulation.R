@@ -193,23 +193,23 @@ if(simulationMode){
       ## low penalty
       # simulate
       startTime = NA
-      if(flexibleK[i] == 1.5){print(1);startTime = proc.time()[[3]]}
+      if(flexibleK[i] == 1.5){startTime = proc.time()[[3]]}
       lowNeuralResults = simulate(neuralTree, testSet, standardTreeStructure, lowCostStructure[[i]])
       if(flexibleK[i] == 1.5){neuralTime$opt = c(neuralTime$opt, proc.time()[[3]] - startTime)}
       
       lowNeuralSingleResults = simulate(neuralTreeSingle, testSet, singlePathTreeStructure, lowCostStructure[[i]])$cost # record the cost only
       lowNeuralLargeResults = simulate(neuralTreeLarge, testSet, largeTreeStructure, lowCostStructure[[i]])$cost # record the cost only
       
-      if(flexibleK[i] == 1.5){print(2);startTime = proc.time()[[3]]}
+      if(flexibleK[i] == 1.5){startTime = proc.time()[[3]]}
       lowResidualResults2 = simulate(residualTree2, testSet, standardTreeStructure, lowCostStructure[[i]])$cost
       if(flexibleK[i] == 1.5){residualTime2$opt = c(residualTime2$opt, proc.time()[[3]] - startTime)}
       
-      if(flexibleK[i] == 1.5){print(3);startTime = proc.time()[[3]]}
+      if(flexibleK[i] == 1.5){startTime = proc.time()[[3]]}
       lowResidualResults4 = simulate(residualTree4, testSet, residualTreeStructure4, lowCostStructure[[i]])$cost
       if(flexibleK[i] == 1.5){residualTime4$opt = c(residualTime4$opt, proc.time()[[3]] - startTime)}
       print('residual tree bin 4 low solved')
       
-      if(flexibleK[i] == 1.5){print(4);startTime = proc.time()[[3]]}
+      if(flexibleK[i] == 1.5){startTime = proc.time()[[3]]}
       lowResidualResults5 = simulate(residualTree5, testSet, residualTreeStructure5, lowCostStructure[[i]])$cost
       if(flexibleK[i] == 1.5){residualTime5$opt = c(residualTime5$opt, proc.time()[[3]] - startTime)}
       print('residual tree bin 5 low solved')
