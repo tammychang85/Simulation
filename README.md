@@ -10,56 +10,56 @@
 7. testSets 資料夾：依模擬日期存放模擬用的測試集
 8. graphs 資料夾：存放模擬結果的圖
 
-其中每個資料夾皆含有一個日期為 "0619" 的子資料夾，裡面存放的果為論文使用的資料
+**其中每個資料夾皆含有一個日期為 "0619" 的子資料夾，裡面存放的果為論文使用的資料**
 
 
 ## results 資料夾詳細說明
 點進以日期命名的子資料夾後應包含 20 個 rds 檔，分別為：
 
-highFixedOrders.rds 高懲罰成本結構下 Neural gas tree 向 fixed 供應商訂購的數量
+*highFixedOrders.rds 高懲罰成本結構下 Neural gas tree 向 fixed 供應商訂購的數量
 
-highFlexibleOrders.rds 高懲罰成本結構下 Neural gas tree 向 flexible 供應商訂購的數量
+*highFlexibleOrders.rds 高懲罰成本結構下 Neural gas tree 向 flexible 供應商訂購的數量
 
-highLargeCost.rds 高懲罰成本結構下有32條 sceanrio path 的 Neural gas tree 的成本表現
+*highLargeCost.rds 高懲罰成本結構下有32條 sceanrio path 的 Neural gas tree 的成本表現
 
-highNeuralCosts.rds 高懲罰成本結構下(二元的)Neural gas tree 的成本表現
+*highNeuralCosts.rds 高懲罰成本結構下(二元的)Neural gas tree 的成本表現
 
-highResidualCosts2.rds 高懲罰成本結構下 bin=2 的 Residual tree 的成本表現
+*highResidualCosts2.rds 高懲罰成本結構下 bin=2 的 Residual tree 的成本表現
 
-highResidualCosts4.rds 高懲罰成本結構下 bin=4 的 Residual tree 的成本表現
+*highResidualCosts4.rds 高懲罰成本結構下 bin=4 的 Residual tree 的成本表現
 
-highResidualCosts5.rds 高懲罰成本結構下 bin=5 的 Residual tree 的成本表現
+*highResidualCosts5.rds 高懲罰成本結構下 bin=5 的 Residual tree 的成本表現
 
-highSingleCost.rds 高懲罰成本結構下只1條 sceanrio path 的 Neural gas tree 的成本表現
+*highSingleCost.rds 高懲罰成本結構下只1條 sceanrio path 的 Neural gas tree 的成本表現
 
-lowFixedOrders.rds 低懲罰成本結構下 Neural gas tree 向 fixed 供應商訂購的數量
+*lowFixedOrders.rds 低懲罰成本結構下 Neural gas tree 向 fixed 供應商訂購的數量
 
-lowFlexibleOrders.rds 低懲罰成本結構下 Neural gas tree 向 flexible 供應商訂購的數量 
+*lowFlexibleOrders.rds 低懲罰成本結構下 Neural gas tree 向 flexible 供應商訂購的數量 
 
-lowLargeCost.rds 低懲罰成本結構下有32條 sceanrio path 的 Neural gas tree 的成本表現
+*lowLargeCost.rds 低懲罰成本結構下有32條 sceanrio path 的 Neural gas tree 的成本表現
 
-lowNeuralCosts.rds 低懲罰成本結構下(二元的)Neural gas tree 的成本表現
+*lowNeuralCosts.rds 低懲罰成本結構下(二元的)Neural gas tree 的成本表現
 
-lowResidualCosts2.rds 低懲罰成本結構下 bin=2 的 Residual tree 的成本表現
+*lowResidualCosts2.rds 低懲罰成本結構下 bin=2 的 Residual tree 的成本表現
 
-lowResidualCosts4.rds 低懲罰成本結構下 bin=4 的 Residual tree 的成本表現
+*lowResidualCosts4.rds 低懲罰成本結構下 bin=4 的 Residual tree 的成本表現
 
-lowResidualCosts5.rds 低懲罰成本結構下 bin=5 的 Residual tree 的成本表現
+*lowResidualCosts5.rds 低懲罰成本結構下 bin=5 的 Residual tree 的成本表現
 
-lowSingleCost.rds 低懲罰成本結構下只1條 sceanrio path 的 Neural gas tree 的成本表現
+*lowSingleCost.rds 低懲罰成本結構下只1條 sceanrio path 的 Neural gas tree 的成本表現
 
-neuralTime.rds Neural gas tree 的運算時間
+*neuralTime.rds Neural gas tree 的運算時間
 
-residualTime2.rds Residual tree bin=2 的運算時間
+*residualTime2.rds Residual tree bin=2 的運算時間
 
-residualTime4.rds Residual tree bin=4 的運算時間
+*residualTime4.rds Residual tree bin=4 的運算時間
 
-residualTime5.rds Residual tree bin=5 的運算時間
+*residualTime5.rds Residual tree bin=5 的運算時間
 
-其中較不一樣的是 reulsts/0619 這個資料夾(論文中所使用的資料)，它額外多了 highCost.rds & lowCost 兩個資料，是用來計算 cost ratio 的 (value of flexibility 的部分)
-這兩個資料是 Neural gas tree 在高低懲罰成本下的 cost，因當初論文測試 value of flexibility 時重新建了一棵二元的 Neural gas tree 去產生 cost 資料，
-而程式碼重新整合為現在的一站式的樣子後，則選擇直接使用前面的其他測試已產生的 highNeuralCost.rds & lowNeuralCost，為了整合舊有的資料與新程式碼的邏輯，將程式設定成
-選用 0619 的資料夾時(選擇方法下面會提到)會特別載入這兩個資料去計算 cost ratio 成本(在 value of flexibility 的部分)，而若選擇重新模擬則不會。
+    其中較不一樣的是 reulsts/0619 這個資料夾(論文中所使用的資料)，它額外多了 highCost.rds & lowCost 兩個資料，是用來計算 cost ratio 的 (value of flexibility 的部分)
+    這兩個資料是 Neural gas tree 在高低懲罰成本下的 cost，因當初論文測試 value of flexibility 時重新建了一棵二元的 Neural gas tree 去產生 cost 資料，
+    而程式碼重新整合為現在的一站式的樣子後，則選擇直接使用前面的其他測試已產生的 highNeuralCost.rds & lowNeuralCost，為了整合舊有的資料與新程式碼的邏輯，將程式設定成
+    選用 0619 的資料夾時(選擇方法下面會提到)會特別載入這兩個資料去計算 cost ratio 成本(在 value of flexibility 的部分)，而若選擇重新模擬則不會。
                                                                                                        
 
 ## Simulation.R 詳細說明
