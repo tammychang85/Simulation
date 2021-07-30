@@ -259,7 +259,7 @@ if(simulationMode){
       saveRDS(residualTime4, paste0(resultFilePath, '/', 'residualTime4.rds'))
       saveRDS(residualTime5, paste0(resultFilePath, '/', 'residualTime5.rds'))
       
-      paste0('done, results saved')
+      print(paste0('done, results saved'))
     }
   }
 }
